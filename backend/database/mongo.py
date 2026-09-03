@@ -42,7 +42,7 @@ def init_db(app):
         client = MongoClient(
             uri,
             tls=True,
-            tlsAllowInvalidCertificates=True,
+            tls_context=ssl_ctx,
             serverSelectionTimeoutMS=30000,
             connectTimeoutMS=20000,
             socketTimeoutMS=20000,
