@@ -188,7 +188,7 @@ const ComplaintDetails = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
                         <div className="card-js" style={{ padding: 20 }}>
                             <span className="pill-js" style={{ fontSize: 10, marginBottom: 12, display: 'inline-block' }}>Before</span>
-                            <img src={`http://localhost:5000/uploads/${complaint.image_path}`} alt="Before"
+                            <img src={`${BASE_URL}/uploads/${complaint.image_path}`} alt="Before"
                                 style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--border-light)' }} />
                             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 8 }}>
                                 Uploaded • {new Date(complaint.created_at).toLocaleDateString()}

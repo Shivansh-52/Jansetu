@@ -265,10 +265,10 @@ const UserDashboard = () => {
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Evidence</div>
-                                        <img src={`http://localhost:5000/uploads/${selectedComplaint.image_before}`} alt="Before"
+                                        <img src={`${BASE_URL}/uploads/${selectedComplaint.image_before}`} alt="Before"
                                             style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--border-light)' }} />
                                         {selectedComplaint.image_after && (
-                                            <img src={`http://localhost:5000/uploads/${selectedComplaint.image_after}`} alt="After"
+                                            <img src={`${BASE_URL}/uploads/${selectedComplaint.image_after}`} alt="After"
                                                 style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12, border: '2px solid var(--color-success)', marginTop: 12 }} />
                                         )}
                                     </div>

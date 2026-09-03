@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { getAllComplaints, overrideComplaintStatus, adminReassign, getUPDistricts } from '../services/api';
+import { getAllComplaints, overrideComplaintStatus, adminReassign, getUPDistricts, API_URL, BASE_URL } from '../services/api';
 import { Link } from 'react-router-dom';
 import StatusTracker from '../components/StatusTracker';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +22,6 @@ function ChangeView({ center, zoom }) {
     return null;
 }
 
-const API_URL = 'http://localhost:5000/api';
 
 const AdminDashboard = () => {
     const [complaints, setComplaints] = useState([]);
@@ -434,10 +433,10 @@ const AdminDashboard = () => {
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Evidence</div>
-                                        <img src={`http://localhost:5000/uploads/${selectedComplaint.image_before}`} alt="Before"
+                                        <img src={`${BASE_URL}/uploads/${selectedComplaint.image_before}`} alt="Before"
                                             style={{ width: '100%', borderRadius: 12, border: '1px solid var(--border-light)', marginBottom: 8 }} />
                                         {selectedComplaint.image_after && (
-                                            <img src={`http://localhost:5000/uploads/${selectedComplaint.image_after}`} alt="After"
+                                            <img src={`${BASE_URL}/uploads/${selectedComplaint.image_after}`} alt="After"
                                                 style={{ width: '100%', borderRadius: 12, border: '2px solid var(--color-success)' }} />
                                         )}
                                     </div>

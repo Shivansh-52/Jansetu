@@ -188,7 +188,7 @@ const PublicTracking = () => {
                                                 <span className="pill-js pill-js--danger" style={{
                                                     position: 'absolute', top: 8, left: 8, fontSize: 10, height: 24, padding: '0 10px', zIndex: 1
                                                 }}>Before</span>
-                                                <img src={`http://localhost:5000/uploads/${complaint.image_path}`} alt="Before"
+                                                <img src={`${BASE_URL}/uploads/${complaint.image_path}`} alt="Before"
                                                     style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--border-light)' }} />
                                             </div>
                                             {complaint.work_image_path ? (
@@ -196,7 +196,7 @@ const PublicTracking = () => {
                                                     <span className="pill-js pill-js--success" style={{
                                                         position: 'absolute', top: 8, left: 8, fontSize: 10, height: 24, padding: '0 10px', zIndex: 1
                                                     }}>After</span>
-                                                    <img src={`http://localhost:5000/uploads/${complaint.work_image_path}`} alt="After"
+                                                    <img src={`${BASE_URL}/uploads/${complaint.work_image_path}`} alt="After"
                                                         style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 12, border: '2px solid var(--color-success)' }} />
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 13, fontWeight: 600, color: 'var(--color-success)' }}>
                                                         ✅ AI Verified Match

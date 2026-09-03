@@ -291,7 +291,7 @@ const WorkerDashboard = () => {
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Evidence (Before)</div>
-                                        <img src={`http://localhost:5000/uploads/${selectedTask.image_before}`} alt="Before"
+                                        <img src={`${BASE_URL}/uploads/${selectedTask.image_before}`} alt="Before"
                                             style={{ width: '100%', borderRadius: 12, border: '1px solid var(--border-light)' }} />
                                         {selectedTask.location?.lat && (
                                             <a href={`https://www.google.com/maps?q=${selectedTask.location.lat},${selectedTask.location.lng}`}
@@ -310,7 +310,7 @@ const WorkerDashboard = () => {
                                         <h3 style={{ fontSize: 20, color: 'var(--color-success)', marginBottom: 8 }}>Work Completed</h3>
                                         <p style={{ fontSize: 14, margin: 0 }}>This grievance has been resolved and verified.</p>
                                         {selectedTask.image_after && (
-                                            <img src={`http://localhost:5000/uploads/${selectedTask.image_after}`} alt="After"
+                                            <img src={`${BASE_URL}/uploads/${selectedTask.image_after}`} alt="After"
                                                 style={{ width: '100%', maxHeight: 200, objectFit: 'cover', borderRadius: 12, marginTop: 16, border: '2px solid var(--color-success)' }} />
                                         )}
                                     </div>

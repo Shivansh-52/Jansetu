@@ -65,7 +65,7 @@ const ComplaintCard = ({ complaint }) => {
                     <div>
                         <p className="text-xs text-gray-500 mb-1">Before</p>
                         <img
-                            src={`http://localhost:5000/uploads/${complaint.image_before}`}
+                            src={`${BASE_URL}/uploads/${complaint.image_before}`}
                             alt="Before"
                             className="h-24 w-24 object-cover rounded"
                         />
@@ -75,7 +75,7 @@ const ComplaintCard = ({ complaint }) => {
                     <div>
                         <p className="text-xs text-gray-500 mb-1">After</p>
                         <img
-                            src={`http://localhost:5000/uploads/${complaint.image_after}`}
+                            src={`${BASE_URL}/uploads/${complaint.image_after}`}
                             alt="After"
                             className="h-24 w-24 object-cover rounded border-2 border-green-500"
                         />

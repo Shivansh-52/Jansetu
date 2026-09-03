@@ -42,7 +42,7 @@ const AIVerificationPanel = ({ complaint }) => {
                             Before Resolution (Citizen Submission)
                         </span>
                         <img
-                            src={`http://localhost:5000/uploads/${image_path}`}
+                            src={`${BASE_URL}/uploads/${image_path}`}
                             alt="Before"
                             className="w-full h-64 object-cover rounded-sm mb-4"
                         />
@@ -71,7 +71,7 @@ const AIVerificationPanel = ({ complaint }) => {
                         {work_image_path ? (
                             <>
                                 <img
-                                    src={`http://localhost:5000/uploads/${work_image_path}`}
+                                    src={`${BASE_URL}/uploads/${work_image_path}`}
                                     alt="After"
                                     className="w-full h-64 object-cover rounded-sm mb-4 border-2 border-green-500"
                                 />
