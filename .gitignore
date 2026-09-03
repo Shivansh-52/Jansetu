@@ -38,7 +38,7 @@ Thumbs.db
 
 # Build
 frontend/build/
-frontend/dist/
+
 backend/uploads/*
 !backend/uploads/.gitkeep
 
