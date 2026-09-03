@@ -24,7 +24,7 @@ if errorlevel 1 (
 echo [1/3] Checking backend dependencies...
 if not exist backend\__pycache__ (
     cd backend
-    pip install -r requirements.txt
+    py -m pip install -r requirements.txt
     cd ..
 )
 

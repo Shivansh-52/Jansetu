@@ -144,6 +144,12 @@ const Navbar = () => {
                                     }}>
                                         Login
                                     </Link>
+                                    <Link to="/up2" style={{
+                                        fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
+                                        color: 'var(--text-secondary)', textDecoration: 'none', marginLeft: '12px', marginRight: '12px'
+                                    }}>
+                                        Official Login
+                                    </Link>
                                     <Link to="/register-complaint" className="btn-primary" style={{
                                         padding: '10px 24px', fontSize: 13
                                     }}>
@@ -248,6 +254,10 @@ const Navbar = () => {
                                 <Link to="/login" onClick={() => setMenuOpen(false)}
                                     className="btn-secondary" style={{ textAlign: 'center', width: '100%' }}>
                                     Login
+                                </Link>
+                                <Link to="/up2" onClick={() => setMenuOpen(false)}
+                                    className="btn-secondary" style={{ textAlign: 'center', width: '100%' }}>
+                                    Official Login
                                 </Link>
                                 <Link to="/register-complaint" onClick={() => setMenuOpen(false)}
                                     className="btn-primary" style={{ textAlign: 'center', width: '100%' }}>

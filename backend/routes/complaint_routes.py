@@ -95,6 +95,10 @@ def submit_complaint():
             'ai_analysis':       result['ai_analysis']
         }), 201
     except Exception as e:
+        import traceback
+        with open("global_requests.log", "a") as f:
+            f.write(f"Error submitting complaint: {e}\n")
+            f.write(traceback.format_exc() + "\n")
         print(f"Error submitting complaint: {e}")
         return jsonify({'error': str(e)}), 500
 

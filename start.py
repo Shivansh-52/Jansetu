@@ -10,6 +10,11 @@ import os
 import signal
 import time
 
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except AttributeError:
+    pass
+
 def signal_handler(sig, frame):
     print("\n🛑 Shutting down JanSetu AI...")
     sys.exit(0)
