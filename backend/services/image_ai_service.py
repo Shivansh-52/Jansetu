@@ -7,7 +7,11 @@ try:
 except Exception:
     pass
 
-from ultralytics import YOLO
+YOLO = None
+try:
+    from ultralytics import YOLO
+except Exception as e:
+    print(f"Warning: YOLO / Torch could not be loaded: {e}")
 
 class ImageAIService:
     def __init__(self):
@@ -16,6 +20,10 @@ class ImageAIService:
         self._load_model()
 
     def _load_model(self):
+        if YOLO is None:
+            print("YOLO is not available on this environment. Using image fallback.")
+            return
+
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             backend_dir = os.path.dirname(current_dir)

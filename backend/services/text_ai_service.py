@@ -35,26 +35,48 @@ class TextAIService:
         text = re.sub(r'[^a-zA-Z\s]', '', text)
         return text
 
+    def _heuristic_classify(self, text):
+        t = text.lower()
+        # Department / Category keywords
+        rules = [
+            ("Roads", ["road", "pothole", "pave", "traffic", "highway", "asphalt", "footpath", "sidewalk", "speed breaker", "crater"]),
+            ("Sanitation", ["garbage", "trash", "waste", "dump", "cleaning", "drain", "dirty", "sweep", "dustbin", "litter", "smell", "filth"]),
+            ("Electricity", ["electric", "power", "light", "street light", "wire", "pole", "transformer", "blackout", "spark", "current", "bulb"]),
+            ("Water", ["water", "leak", "pipe", "pipeline", "sewage", "supply", "tap", "drinking water", "overflow", "drainage", "clog"]),
+        ]
+        best_cat = "General"
+        max_matches = 0
+        for cat, keywords in rules:
+            matches = sum(1 for k in keywords if k in t)
+            if matches > max_matches:
+                max_matches = matches
+                best_cat = cat
+
+        conf = min(0.5 + 0.15 * max_matches, 0.95) if max_matches > 0 else 0.5
+        return {"category": best_cat, "confidence": conf}
+
     def analyze(self, text):
-        if not self.models_loaded or not text:
-             # Fallback if no model or empty text
+        if not text:
             return {"category": "General", "confidence": 0.0}
 
-        try:
-            cleaned_text = self.clean_text(text)
-            text_vector = self.vectorizer.transform([cleaned_text])
-            
-            # Predict Category
-            prediction = self.model.predict(text_vector)[0]
-            probabilities = self.model.predict_proba(text_vector)[0]
-            confidence = max(probabilities)
-            
-            return {
-                "category": prediction,
-                "confidence": float(confidence)
-            }
-        except Exception as e:
-            print(f"Error in Text AI analysis: {e}")
-            return {"category": "General", "confidence": 0.0}
+        if self.models_loaded:
+            try:
+                cleaned_text = self.clean_text(text)
+                text_vector = self.vectorizer.transform([cleaned_text])
+                
+                # Predict Category
+                prediction = self.model.predict(text_vector)[0]
+                probabilities = self.model.predict_proba(text_vector)[0]
+                confidence = max(probabilities)
+                
+                return {
+                    "category": prediction,
+                    "confidence": float(confidence)
+                }
+            except Exception as e:
+                print(f"Error in Text AI model prediction: {e}")
+
+        # Heuristic fallback if model failed or not loaded
+        return self._heuristic_classify(text)
 
 text_ai_service = TextAIService()

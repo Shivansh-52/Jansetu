@@ -265,8 +265,6 @@ def login():
                 }), 200
             else:
                 print(f"Failure: Password mismatch for {email}")
-                print(f"Received: {password}")
-                print(f"Expected: {stored_hash} or {stored_pass}")
                 return jsonify({'error': 'Invalid credentials (Password mismatch)'}), 401
                 
         else:

@@ -32,34 +32,53 @@ class SentimentService:
         except Exception as e:
             print(f"Error loading Sentiment AI models: {e}")
 
+    def _heuristic_priority(self, text):
+        t = text.lower()
+        high_indicators = [
+            "urgent", "emergency", "danger", "hazard", "spark", "fire", "accident",
+            "severe", "critical", "burst", "flood", "shock", "collapse", "risk", "death",
+            "immediately", "life", "children", "hospital", "toxic", "poison"
+        ]
+        low_indicators = [
+            "minor", "suggestion", "slow", "cosmetic", "paint", "feedback", "inconvenience",
+            "request", "query"
+        ]
+        if any(w in t for w in high_indicators):
+            return {"priority": "High", "confidence": 0.85}
+        if any(w in t for w in low_indicators):
+            return {"priority": "Low", "confidence": 0.75}
+        return {"priority": "Medium", "confidence": 0.70}
+
     def analyze(self, text):
-        if not self.models_loaded or not text:
+        if not text:
             return {"priority": "Medium", "confidence": 0.0}
 
-        try:
-            # Simple cleaning
-            cleaned_text = text.lower()
-            
-            # Check if model is an sklearn Pipeline (has tfidf built-in)
-            if hasattr(self.model, 'steps') or hasattr(self.model, 'named_steps'):
-                prediction = self.model.predict([cleaned_text])[0]
-                if hasattr(self.model, 'predict_proba'):
-                    probabilities = self.model.predict_proba([cleaned_text])[0]
-                    confidence = max(probabilities)
+        if self.models_loaded:
+            try:
+                # Simple cleaning
+                cleaned_text = text.lower()
+                
+                # Check if model is an sklearn Pipeline (has tfidf built-in)
+                if hasattr(self.model, 'steps') or hasattr(self.model, 'named_steps'):
+                    prediction = self.model.predict([cleaned_text])[0]
+                    if hasattr(self.model, 'predict_proba'):
+                        probabilities = self.model.predict_proba([cleaned_text])[0]
+                        confidence = max(probabilities)
+                    else:
+                        confidence = 0.8
                 else:
-                    confidence = 0.8
-            else:
-                text_vector = self.vectorizer.transform([cleaned_text])
-                prediction = self.model.predict(text_vector)[0]
-                probabilities = self.model.predict_proba(text_vector)[0]
-                confidence = max(probabilities)
-            
-            return {
-                "priority": prediction, # High, Medium, Low
-                "confidence": float(confidence)
-            }
-        except Exception as e:
-            print(f"Error in Sentiment AI analysis: {e}")
-            return {"priority": "Medium", "confidence": 0.0}
+                    text_vector = self.vectorizer.transform([cleaned_text])
+                    prediction = self.model.predict(text_vector)[0]
+                    probabilities = self.model.predict_proba(text_vector)[0]
+                    confidence = max(probabilities)
+                
+                return {
+                    "priority": prediction, # High, Medium, Low
+                    "confidence": float(confidence)
+                }
+            except Exception as e:
+                print(f"Error in Sentiment AI analysis: {e}")
+
+        return self._heuristic_priority(text)
 
 sentiment_service = SentimentService()

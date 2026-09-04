@@ -52,13 +52,14 @@ def init_db(app=None):
         print("[DB] Warning: MONGO_URI is not set!")
         return None
 
-    # ── Strategy 1: Standard Certifi CA (Recommended for Atlas on Linux/Cloud) ──
-    if CA_FILE and 'mongodb+srv' in uri:
+    # ── Strategy 1: Standard Certifi CA (Recommended for Atlas on Linux/Cloud/Windows) ──
+    if CA_FILE and 'mongodb' in uri:
         try:
             client = MongoClient(
                 uri,
                 tlsCAFile=CA_FILE,
-                serverSelectionTimeoutMS=15000,
+                serverSelectionTimeoutMS=10000,
+                connectTimeoutMS=10000,
             )
             client.admin.command('ping')
             db = client[db_name]
@@ -67,38 +68,32 @@ def init_db(app=None):
         except Exception as e:
             print(f"[DB] Certifi strategy failed: {type(e).__name__}: {str(e)[:120]}")
 
-    # ── Strategy 2: Custom SSLContext with SECLEVEL=1 ──────────────────────
+    # ── Strategy 2: Direct TLS with AllowInvalidCertificates ──────────────────────
     try:
-        ssl_ctx = _make_ssl_context()
         client = MongoClient(
             uri,
             tls=True,
-            tls_context=ssl_ctx,
-            serverSelectionTimeoutMS=30000,
-            connectTimeoutMS=20000,
-            socketTimeoutMS=20000,
+            tlsAllowInvalidCertificates=True,
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
         )
         client.admin.command('ping')
         db = client[db_name]
-        print(f"[DB] Connected to MongoDB Atlas: {db_name}")
+        print(f"[DB] Connected to MongoDB Atlas (tlsAllowInvalidCertificates): {db_name}")
         return db
     except Exception as e:
         print(f"[DB] Strategy 2 failed: {type(e).__name__}: {str(e)[:120]}")
 
-    # ── Strategy 3: URI-level tlsInsecure parameter ────────────────────────
+    # ── Strategy 3: Standard Client with URI options ────────────────────────
     try:
-        insecure_uri = uri
-        if '?' in uri:
-            insecure_uri += '&tlsInsecure=true'
-        else:
-            insecure_uri += '?tlsInsecure=true'
         client = MongoClient(
-            insecure_uri,
-            serverSelectionTimeoutMS=30000,
+            uri,
+            serverSelectionTimeoutMS=10000,
+            connectTimeoutMS=10000,
         )
         client.admin.command('ping')
         db = client[db_name]
-        print(f"[DB] Connected to MongoDB Atlas (tlsInsecure): {db_name}")
+        print(f"[DB] Connected to MongoDB Atlas (standard): {db_name}")
         return db
     except Exception as e:
         print(f"[DB] Strategy 3 failed: {type(e).__name__}: {str(e)[:120]}")
@@ -107,7 +102,8 @@ def init_db(app=None):
     try:
         client = MongoClient(
             'mongodb://localhost:27017/',
-            serverSelectionTimeoutMS=5000,
+            serverSelectionTimeoutMS=3000,
+            connectTimeoutMS=3000,
         )
         client.admin.command('ping')
         db = client[db_name]
