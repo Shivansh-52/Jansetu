@@ -1,3 +1,13 @@
+import os
+import tempfile
+# Ensure Ultralytics writes config to writable temp directory in cloud environments
+yolo_dir = os.path.join(tempfile.gettempdir(), 'Ultralytics')
+try:
+    os.makedirs(yolo_dir, exist_ok=True)
+    os.environ['YOLO_CONFIG_DIR'] = yolo_dir
+except Exception:
+    pass
+
 from flask import Flask, send_from_directory, request, send_file
 from flask_cors import CORS
 from config import Config
@@ -6,12 +16,11 @@ from routes.auth_routes import auth_bp
 from routes.complaint_routes import complaint_bp
 from routes.worker_routes import worker_bp
 from routes.admin_routes import admin_bp
-import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIST = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontend', 'dist'))
 
-app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='')
+app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
 
 # Ensure uploads directory exists

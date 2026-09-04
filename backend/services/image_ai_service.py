@@ -1,5 +1,13 @@
-from ultralytics import YOLO
 import os
+import tempfile
+yolo_dir = os.path.join(tempfile.gettempdir(), 'Ultralytics')
+try:
+    os.makedirs(yolo_dir, exist_ok=True)
+    os.environ['YOLO_CONFIG_DIR'] = yolo_dir
+except Exception:
+    pass
+
+from ultralytics import YOLO
 
 class ImageAIService:
     def __init__(self):
