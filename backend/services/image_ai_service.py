@@ -17,12 +17,21 @@ class ImageAIService:
     def __init__(self):
         self.model = None
         self.models_loaded = False
-        self._load_model()
+        self._load_attempted = False
 
-    def _load_model(self):
-        if YOLO is None:
-            print("YOLO is not available on this environment. Using image fallback.")
+    def _ensure_model_loaded(self):
+        if self._load_attempted:
             return
+        self._load_attempted = True
+
+        global YOLO
+        if YOLO is None:
+            try:
+                from ultralytics import YOLO as _YOLO
+                YOLO = _YOLO
+            except Exception as e:
+                print(f"Warning: YOLO / Torch could not be loaded: {e}")
+                return
 
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +48,8 @@ class ImageAIService:
             print(f"Error loading Image AI model: {e}")
 
     def analyze(self, image_path):
-        if not self.models_loaded:
+        self._ensure_model_loaded()
+        if not self.models_loaded or self.model is None:
             return {"detected_issue": "Unknown", "confidence": 0.0, "objects": []}
 
         try:

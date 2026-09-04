@@ -172,11 +172,17 @@ def _escalation_loop():
         time.sleep(POLL_INTERVAL_SECONDS)
 
 
+_escalation_thread = None
+
 def start_escalation_service():
     """
     Launch the escalation scanner as a background daemon thread.
     Call once from app.py after the DB is initialised.
     """
-    t = threading.Thread(target=_escalation_loop, daemon=True, name='EscalationService')
-    t.start()
-    return t
+    global _escalation_thread
+    if _escalation_thread is not None and _escalation_thread.is_alive():
+        return _escalation_thread
+
+    _escalation_thread = threading.Thread(target=_escalation_loop, daemon=True, name='EscalationService')
+    _escalation_thread.start()
+    return _escalation_thread
