@@ -8,7 +8,10 @@ from routes.worker_routes import worker_bp
 from routes.admin_routes import admin_bp
 import os
 
-app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIST = os.path.abspath(os.path.join(BASE_DIR, '..', 'frontend', 'dist'))
+
+app = Flask(__name__, static_folder=FRONTEND_DIST, static_url_path='')
 app.config.from_object(Config)
 
 # Ensure uploads directory exists
@@ -59,25 +62,25 @@ def uploaded_file(filename):
 # Serve Frontend (Single Page Application)
 @app.route('/')
 def serve_frontend():
-    index_path = os.path.join(app.static_folder, 'index.html')
+    index_path = os.path.join(FRONTEND_DIST, 'index.html')
     if os.path.exists(index_path):
         return send_file(index_path)
     return {"status": "ok", "message": "JanSetu AI Backend API is running"}, 200
 
-# Handle client-side routing - serve index.html for all non-API routes
+# Handle client-side routing & static assets (CSS, JS, images, favicons)
 @app.route('/<path:path>')
 def serve_static(path):
     # If path starts with api/, it's an API request - return 404 if not handled
     if path.startswith('api/'):
         return {"error": "API endpoint not found"}, 404
     
-    # Check if file exists in static folder
-    file_path = os.path.join(app.static_folder, path)
+    # Check if file exists in frontend dist folder
+    file_path = os.path.join(FRONTEND_DIST, path)
     if os.path.exists(file_path) and os.path.isfile(file_path):
-        return send_from_directory(app.static_folder, path)
+        return send_from_directory(FRONTEND_DIST, path)
     
     # Otherwise serve index.html for client-side routing
-    index_path = os.path.join(app.static_folder, 'index.html')
+    index_path = os.path.join(FRONTEND_DIST, 'index.html')
     if os.path.exists(index_path):
         return send_file(index_path)
     return {"error": "Resource not found"}, 404
