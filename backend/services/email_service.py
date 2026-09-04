@@ -9,7 +9,10 @@ load_dotenv()
 EMAIL_SENDER = os.getenv('EMAIL_SENDER', '')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', '')
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
+try:
+    SMTP_PORT = int(os.getenv('SMTP_PORT', '587') or 587)
+except Exception:
+    SMTP_PORT = 587
 
 
 def _send_email(to_email, subject, html_body):
@@ -25,7 +28,7 @@ def _send_email(to_email, subject, html_body):
         msg['Subject'] = subject
         msg.attach(MIMEText(html_body, 'html'))
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
             server.starttls()
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
