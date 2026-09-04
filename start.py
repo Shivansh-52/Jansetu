@@ -27,10 +27,7 @@ def start_backend():
     backend_path = os.path.join(os.path.dirname(__file__), 'backend')
     return subprocess.Popen(
         [sys.executable, 'app.py'],
-        cwd=backend_path,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True
+        cwd=backend_path
     )
 
 def start_frontend():
@@ -40,9 +37,6 @@ def start_frontend():
     return subprocess.Popen(
         ['npm', 'run', 'dev'],
         cwd=frontend_path,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
         shell=True  # Required for npm on Windows
     )
 

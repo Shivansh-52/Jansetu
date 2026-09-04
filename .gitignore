@@ -50,9 +50,10 @@ backend/uploads/*
 *.sqlite
 
 # Models (large files)
-backend/models/*.pkl
-backend/models/*.h5
-backend/models/*.pt
+!backend/models/*.pkl
+!backend/models/*.h5
+!backend/models/*.pt
 
 # Debug
 debug_worker_tasks.py
+test_mongo.py

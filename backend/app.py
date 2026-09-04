@@ -42,6 +42,11 @@ app.register_blueprint(dept_officer_bp, url_prefix='/api/dept-officer')
 from routes.notification_routes import notification_bp
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')
 
+# Health check endpoint for Uptime Robot
+@app.route('/api/health')
+def health_check():
+    return {"status": "ok"}, 200
+
 # Serve Uploaded Images (for frontend display)
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
