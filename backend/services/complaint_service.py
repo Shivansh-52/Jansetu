@@ -25,7 +25,11 @@ class ComplaintService:
         db = get_db()
         
         # 1. Save Image
-        filename = image_file.filename
+        from werkzeug.utils import secure_filename
+        import uuid
+        raw_name = secure_filename(image_file.filename) or 'evidence.jpg'
+        filename = f"{uuid.uuid4().hex[:10]}_{raw_name}"
+        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
         image_path = os.path.join(Config.UPLOAD_FOLDER, filename)
         image_file.save(image_path)
         

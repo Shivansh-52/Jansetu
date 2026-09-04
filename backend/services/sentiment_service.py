@@ -38,13 +38,21 @@ class SentimentService:
 
         try:
             # Simple cleaning
-            text = text.lower()
-            text_vector = self.vectorizer.transform([text])
+            cleaned_text = text.lower()
             
-            # Predict Priority
-            prediction = self.model.predict(text_vector)[0]
-            probabilities = self.model.predict_proba(text_vector)[0]
-            confidence = max(probabilities)
+            # Check if model is an sklearn Pipeline (has tfidf built-in)
+            if hasattr(self.model, 'steps') or hasattr(self.model, 'named_steps'):
+                prediction = self.model.predict([cleaned_text])[0]
+                if hasattr(self.model, 'predict_proba'):
+                    probabilities = self.model.predict_proba([cleaned_text])[0]
+                    confidence = max(probabilities)
+                else:
+                    confidence = 0.8
+            else:
+                text_vector = self.vectorizer.transform([cleaned_text])
+                prediction = self.model.predict(text_vector)[0]
+                probabilities = self.model.predict_proba(text_vector)[0]
+                confidence = max(probabilities)
             
             return {
                 "priority": prediction, # High, Medium, Low

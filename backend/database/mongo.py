@@ -37,9 +37,20 @@ def _make_ssl_context():
     return ctx
 
 
-def init_db(app):
+def init_db(app=None):
     global client, db
-    uri = app.config['MONGO_URI']
+    
+    if app and hasattr(app, 'config'):
+        uri = app.config.get('MONGO_URI', '')
+        db_name = app.config.get('DB_NAME', 'jansetu_ai')
+    else:
+        from config import Config
+        uri = getattr(Config, 'MONGO_URI', '')
+        db_name = getattr(Config, 'DB_NAME', 'jansetu_ai')
+
+    if not uri:
+        print("[DB] Warning: MONGO_URI is not set!")
+        return None
 
     # ── Strategy 1: Standard Certifi CA (Recommended for Atlas on Linux/Cloud) ──
     if CA_FILE and 'mongodb+srv' in uri:
@@ -50,9 +61,9 @@ def init_db(app):
                 serverSelectionTimeoutMS=15000,
             )
             client.admin.command('ping')
-            db = client[app.config['DB_NAME']]
-            print(f"[DB] Connected to MongoDB Atlas via Certifi: {app.config['DB_NAME']}")
-            return
+            db = client[db_name]
+            print(f"[DB] Connected to MongoDB Atlas via Certifi: {db_name}")
+            return db
         except Exception as e:
             print(f"[DB] Certifi strategy failed: {type(e).__name__}: {str(e)[:120]}")
 
@@ -68,13 +79,13 @@ def init_db(app):
             socketTimeoutMS=20000,
         )
         client.admin.command('ping')
-        db = client[app.config['DB_NAME']]
-        print(f"[DB] Connected to MongoDB Atlas: {app.config['DB_NAME']}")
-        return
+        db = client[db_name]
+        print(f"[DB] Connected to MongoDB Atlas: {db_name}")
+        return db
     except Exception as e:
-        print(f"[DB] Strategy 1 failed: {type(e).__name__}: {str(e)[:120]}")
+        print(f"[DB] Strategy 2 failed: {type(e).__name__}: {str(e)[:120]}")
 
-    # ── Strategy 2: URI-level tlsInsecure parameter ────────────────────────
+    # ── Strategy 3: URI-level tlsInsecure parameter ────────────────────────
     try:
         insecure_uri = uri
         if '?' in uri:
@@ -86,26 +97,32 @@ def init_db(app):
             serverSelectionTimeoutMS=30000,
         )
         client.admin.command('ping')
-        db = client[app.config['DB_NAME']]
-        print(f"[DB] Connected to MongoDB Atlas (tlsInsecure): {app.config['DB_NAME']}")
-        return
+        db = client[db_name]
+        print(f"[DB] Connected to MongoDB Atlas (tlsInsecure): {db_name}")
+        return db
     except Exception as e:
-        print(f"[DB] Strategy 2 failed: {type(e).__name__}: {str(e)[:120]}")
+        print(f"[DB] Strategy 3 failed: {type(e).__name__}: {str(e)[:120]}")
 
-    # ── Strategy 3: Plain connection (local fallback) ──────────────────────
+    # ── Strategy 4: Plain connection (local fallback) ──────────────────────
     try:
         client = MongoClient(
             'mongodb://localhost:27017/',
             serverSelectionTimeoutMS=5000,
         )
         client.admin.command('ping')
-        db = client[app.config['DB_NAME']]
-        print(f"[DB] Connected to LOCAL MongoDB: {app.config['DB_NAME']}")
+        db = client[db_name]
+        print(f"[DB] Connected to LOCAL MongoDB: {db_name}")
+        return db
     except Exception as e:
         print(f"[DB] ALL connection strategies failed. Last error: {e}")
         db = None
+        return None
 
 
 def get_db():
-    global db
+    global db, client
+    if db is None:
+        init_db()
+    if db is None:
+        raise RuntimeError("Database connection not available. Please verify MONGO_URI configuration.")
     return db

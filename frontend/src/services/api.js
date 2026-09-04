@@ -59,10 +59,14 @@ export const registerUser = async (userData) => {
 };
 
 export const submitComplaint = async (formData) => {
-    const response = await api.post('/complaint/submit', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    // Do NOT set Content-Type so browser sets correct multipart/form-data with boundary
+    const response = await axios.post(`${API_URL}/complaint/submit`, formData, {
+        headers
     });
     return response.data;
 };
