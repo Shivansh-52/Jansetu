@@ -15,8 +15,10 @@ except Exception:
     SMTP_PORT = 587
 
 
-def _send_email(to_email, subject, html_body):
-    """Core email sending function using SMTP."""
+import threading
+
+def _send_email_async(to_email, subject, html_body):
+    """Core email sending function using SMTP in a background thread."""
     if not EMAIL_SENDER or not EMAIL_PASSWORD:
         print(f"[EMAIL] Skipped (no credentials configured). To: {to_email}, Subject: {subject}")
         return False
@@ -28,7 +30,7 @@ def _send_email(to_email, subject, html_body):
         msg['Subject'] = subject
         msg.attach(MIMEText(html_body, 'html'))
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=8) as server:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=5) as server:
             server.starttls()
             server.login(EMAIL_SENDER, EMAIL_PASSWORD)
             server.sendmail(EMAIL_SENDER, to_email, msg.as_string())
@@ -38,6 +40,12 @@ def _send_email(to_email, subject, html_body):
     except Exception as e:
         print(f"[EMAIL] Failed to send to {to_email}: {e}")
         return False
+
+def _send_email(to_email, subject, html_body):
+    """Spawns background thread so HTTP requests return immediately without waiting for SMTP."""
+    t = threading.Thread(target=_send_email_async, args=(to_email, subject, html_body), daemon=True)
+    t.start()
+    return True
 
 
 def send_complaint_confirmation(to_email, ref_id, complaint_id):
