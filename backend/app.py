@@ -79,7 +79,12 @@ def serve_static(path):
     if os.path.exists(file_path) and os.path.isfile(file_path):
         return send_from_directory(FRONTEND_DIST, path)
     
-    # Otherwise serve index.html for client-side routing
+    # If path is an asset request (e.g., .js, .css, .png, or under assets/), do not fallback to index.html
+    ext = os.path.splitext(path)[1].lower()
+    if path.startswith('assets/') or ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.json', '.woff', '.woff2', '.ttf', '.map']:
+        return {"error": "Asset not found"}, 404
+
+    # Otherwise serve index.html for client-side SPA routing
     index_path = os.path.join(FRONTEND_DIST, 'index.html')
     if os.path.exists(index_path):
         return send_file(index_path)
