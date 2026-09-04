@@ -25,90 +25,133 @@ class ComplaintService:
         db = get_db()
         
         # 1. Save Image
-        from werkzeug.utils import secure_filename
-        import uuid
-        raw_name = secure_filename(image_file.filename) or 'evidence.jpg'
-        filename = f"{uuid.uuid4().hex[:10]}_{raw_name}"
-        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-        image_path = os.path.join(Config.UPLOAD_FOLDER, filename)
-        image_file.save(image_path)
-        
+        try:
+            from werkzeug.utils import secure_filename
+            import uuid
+            raw_name = secure_filename(image_file.filename) or 'evidence.jpg'
+            filename = f"{uuid.uuid4().hex[:10]}_{raw_name}"
+            os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+            image_path = os.path.join(Config.UPLOAD_FOLDER, filename)
+            image_file.save(image_path)
+        except Exception as e:
+            print(f"[IMAGE SAVE] Error saving uploaded image: {e}")
+            filename = 'evidence.jpg'
+            image_path = ''
+
         # 2. Normalize Text
-        normalized_text = normalization_service.normalize(text)
-        
+        try:
+            normalized_text = normalization_service.normalize(text)
+        except Exception as e:
+            print(f"[NORMALIZATION] Error during normalization: {e}")
+            normalized_text = (text or '').lower()
+
         # 3. AI Analysis
-        text_result = text_ai_service.analyze(normalized_text)
-        category = text_result.get('category', 'General')
-        
-        sentiment_result = sentiment_service.analyze(normalized_text)
-        text_priority = sentiment_result.get('priority', 'Medium')
-        
-        image_result = image_ai_service.analyze(image_path)
-        image_confidence = image_result.get('confidence', 0.0)
-        
+        try:
+            text_result = text_ai_service.analyze(normalized_text)
+            category = text_result.get('category', 'General')
+        except Exception as e:
+            print(f"[TEXT AI] Error: {e}")
+            category = 'General'
+
+        try:
+            sentiment_result = sentiment_service.analyze(normalized_text)
+            text_priority = sentiment_result.get('priority', 'Medium')
+        except Exception as e:
+            print(f"[SENTIMENT AI] Error: {e}")
+            text_priority = 'Medium'
+
+        try:
+            if image_path and os.path.exists(image_path):
+                image_result = image_ai_service.analyze(image_path)
+            else:
+                image_result = {'confidence': 0.0, 'description': 'Image saved'}
+            image_confidence = image_result.get('confidence', 0.0)
+        except Exception as e:
+            print(f"[IMAGE AI] Error: {e}")
+            image_result = {'confidence': 0.0, 'description': 'Image analysis bypassed'}
+            image_confidence = 0.0
+
         # 4. Decision Fusion Engine
-        final_priority = priority_engine.calculate_priority(text_priority, image_confidence)
-        department = department_mapper.map_complaint(category)
-        
+        try:
+            final_priority = priority_engine.calculate_priority(text_priority, image_confidence)
+        except Exception as e:
+            print(f"[PRIORITY ENGINE] Error: {e}")
+            final_priority = text_priority or 'Medium'
+
+        try:
+            department = department_mapper.map_complaint(category)
+        except Exception as e:
+            print(f"[DEPT MAPPER] Error: {e}")
+            department = 'General'
+
         # 5. Generate Official ID
-        ref_id = generate_complaint_id(category)
+        try:
+            ref_id = generate_complaint_id(category)
+        except Exception as e:
+            print(f"[ID GENERATION] Error: {e}")
+            import time, random
+            ref_id = f"JAN-CIVIC-{int(time.time())}-{random.randint(100, 999)}"
 
         # ── DUPLICATE DETECTION ─────────────────────────────────────────────
         # Check if same user/email already has an active or recent complaint
         # with the same category within the last 7 days.
-        DEDUP_WINDOW_DAYS = 7
-        dedup_cutoff = __import__('datetime').datetime.utcnow() - \
-                       __import__('datetime').timedelta(days=DEDUP_WINDOW_DAYS)
+        try:
+            DEDUP_WINDOW_DAYS = 7
+            dedup_cutoff = __import__('datetime').datetime.utcnow() - \
+                           __import__('datetime').timedelta(days=DEDUP_WINDOW_DAYS)
 
-        # Build the duplicate query
-        dedup_query = {
-            'category':   category,
-            'created_at': {'$gte': dedup_cutoff},
-        }
-        # Match by user_id (authenticated) OR email (guest)
-        if user_id and user_id != 'Anonymous':
-            dedup_query['user_id'] = user_id
-        elif email:
-            dedup_query['email'] = email
-        else:
-            dedup_query = None   # anonymous with no email — skip dedup
+            # Build the duplicate query
+            dedup_query = {
+                'category':   category,
+                'created_at': {'$gte': dedup_cutoff},
+            }
+            # Match by user_id (authenticated) OR email (guest)
+            if user_id and user_id != 'Anonymous':
+                dedup_query['user_id'] = user_id
+            elif email:
+                dedup_query['email'] = email
+            else:
+                dedup_query = None   # anonymous with no email — skip dedup
 
-        if dedup_query:
-            existing = db.complaints.find_one(
-                dedup_query,
-                sort=[('created_at', -1)]   # most recent first
-            )
-            if existing:
-                ex_status = existing.get('status', 'Pending')
-                ex_ref    = existing.get('ref_id', str(existing['_id']))
-                is_resolved = ex_status in ('Resolved', 'Verified')
+            if dedup_query:
+                existing = db.complaints.find_one(
+                    dedup_query,
+                    sort=[('created_at', -1)]   # most recent first
+                )
+                if existing:
+                    ex_status = existing.get('status', 'Pending')
+                    ex_ref    = existing.get('ref_id', str(existing['_id']))
+                    is_resolved = ex_status in ('Resolved', 'Verified')
 
-                if is_resolved:
-                    friendly_msg = (
-                        f"Your concern about '{category}' was already registered as "
-                        f"{ex_ref} and has been resolved. "
-                        f"Don't panic — your concern has been taken care of! "
-                        f"If the issue persists, you may reopen that complaint."
-                    )
-                else:
-                    friendly_msg = (
-                        f"Your concern about '{category}' is already registered as "
-                        f"{ex_ref} (Status: {ex_status}). "
-                        f"Don't panic — your concern has been taken. "
-                        f"We are actively working on it!"
-                    )
+                    if is_resolved:
+                        friendly_msg = (
+                            f"Your concern about '{category}' was already registered as "
+                            f"{ex_ref} and has been resolved. "
+                            f"Don't panic — your concern has been taken care of! "
+                            f"If the issue persists, you may reopen that complaint."
+                        )
+                    else:
+                        friendly_msg = (
+                            f"Your concern about '{category}' is already registered as "
+                            f"{ex_ref} (Status: {ex_status}). "
+                            f"Don't panic — your concern has been taken. "
+                            f"We are actively working on it!"
+                        )
 
-                print(f"[DEDUP] Duplicate detected for user {user_id}/{email}: "
-                      f"{ex_ref} ({ex_status})")
+                    print(f"[DEDUP] Duplicate detected for user {user_id}/{email}: "
+                          f"{ex_ref} ({ex_status})")
 
-                return {
-                    'duplicate':      True,
-                    'existing_ref_id': ex_ref,
-                    'existing_status': ex_status,
-                    'message':        friendly_msg,
-                    'is_resolved':    is_resolved,
-                }
+                    return {
+                        'duplicate':      True,
+                        'existing_ref_id': ex_ref,
+                        'existing_status': ex_status,
+                        'message':        friendly_msg,
+                        'is_resolved':    is_resolved,
+                    }
+        except Exception as e:
+            print(f"[DEDUP ERROR] Bypassing dedup due to error: {e}")
         # ── END DUPLICATE DETECTION ──────────────────────────────────────────
+
         new_complaint = create_complaint(
             user_id=user_id,
             text=text,
@@ -127,13 +170,16 @@ class ComplaintService:
         complaint_id = str(result.inserted_id)
 
         # 7. Trigger In-App Notification
-        from services.notification_service import notification_service
-        notification_service.notify_complaint_activity(
-            user_id=user_id,
-            complaint_id=ref_id,
-            message=f"Your complaint {ref_id} has been successfully registered.",
-            type="submission"
-        )
+        try:
+            from services.notification_service import notification_service
+            notification_service.notify_complaint_activity(
+                user_id=user_id,
+                complaint_id=ref_id,
+                message=f"Your complaint {ref_id} has been successfully registered.",
+                type="submission"
+            )
+        except Exception as e:
+            print(f"[NOTIFICATION] Error: {e}")
 
         # 8. Send Email Notification
         if email:
