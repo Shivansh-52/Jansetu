@@ -5,14 +5,7 @@ services:
     name: jansetu-ai
     env: python
     plan: free
-    buildCommand: |
-      # Install Node.js for frontend build
-      curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-      apt-get install -y nodejs
-      # Build frontend
-      cd frontend && npm install && npm run build
-      # Install Python dependencies
-      cd ../backend && pip install -r requirements.txt
+    buildCommand: cd frontend && npm install && npm run build && cd ../backend && pip install -r requirements.txt
     startCommand: cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
     envVars:
       - key: PYTHON_VERSION

@@ -11,6 +11,11 @@ Fix: create a custom ssl.SSLContext with SECLEVEL=1 and pass it to MongoClient.
 from pymongo import MongoClient
 from flask import current_app, g
 import ssl
+try:
+    import certifi
+    CA_FILE = certifi.where()
+except ImportError:
+    CA_FILE = None
 
 client = None
 db = None
@@ -36,7 +41,22 @@ def init_db(app):
     global client, db
     uri = app.config['MONGO_URI']
 
-    # ── Strategy 1: Custom SSLContext with SECLEVEL=1 ──────────────────────
+    # ── Strategy 1: Standard Certifi CA (Recommended for Atlas on Linux/Cloud) ──
+    if CA_FILE and 'mongodb+srv' in uri:
+        try:
+            client = MongoClient(
+                uri,
+                tlsCAFile=CA_FILE,
+                serverSelectionTimeoutMS=15000,
+            )
+            client.admin.command('ping')
+            db = client[app.config['DB_NAME']]
+            print(f"[DB] Connected to MongoDB Atlas via Certifi: {app.config['DB_NAME']}")
+            return
+        except Exception as e:
+            print(f"[DB] Certifi strategy failed: {type(e).__name__}: {str(e)[:120]}")
+
+    # ── Strategy 2: Custom SSLContext with SECLEVEL=1 ──────────────────────
     try:
         ssl_ctx = _make_ssl_context()
         client = MongoClient(

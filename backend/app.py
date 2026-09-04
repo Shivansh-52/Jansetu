@@ -11,18 +11,22 @@ import os
 app = Flask(__name__, static_folder='../frontend/dist', static_url_path='')
 app.config.from_object(Config)
 
-# Enable CORS only in development (when running locally)
-if os.getenv('FLASK_ENV') != 'production':
-    CORS(app)
+# Ensure uploads directory exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Enable CORS for all environments (development and production live server)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Global Request Logging
 @app.before_request
 def log_request_info():
     import datetime
-    with open("global_requests.log", "a") as f:
-        f.write(f"[{datetime.datetime.now()}] {request.method} {request.url}\n")
-        f.write(f"Headers: {request.headers}\n")
-        # Don't log body for uploads as it's huge
+    try:
+        with open("global_requests.log", "a") as f:
+            f.write(f"[{datetime.datetime.now()}] {request.method} {request.url}\n")
+            f.write(f"Headers: {request.headers}\n")
+    except Exception:
+        pass
 
 
 # Initialize Database
@@ -55,7 +59,10 @@ def uploaded_file(filename):
 # Serve Frontend (Single Page Application)
 @app.route('/')
 def serve_frontend():
-    return send_file(os.path.join(app.static_folder, 'index.html'))
+    index_path = os.path.join(app.static_folder, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    return {"status": "ok", "message": "JanSetu AI Backend API is running"}, 200
 
 # Handle client-side routing - serve index.html for all non-API routes
 @app.route('/<path:path>')
@@ -70,7 +77,10 @@ def serve_static(path):
         return send_from_directory(app.static_folder, path)
     
     # Otherwise serve index.html for client-side routing
-    return send_file(os.path.join(app.static_folder, 'index.html'))
+    index_path = os.path.join(app.static_folder, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    return {"error": "Resource not found"}, 404
 
 if __name__ == '__main__':
     if not os.path.exists(Config.UPLOAD_FOLDER):

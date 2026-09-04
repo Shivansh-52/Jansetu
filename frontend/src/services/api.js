@@ -1,11 +1,20 @@
 import axios from 'axios';
 
-// Use relative URL for single-service deployment (same domain)
-// or fallback to localhost for development
-export const API_URL = import.meta.env.VITE_API_URL || '/api';
+// Normalize VITE_API_URL so it always points accurately to the /api endpoint
+const envApiUrl = (import.meta.env.VITE_API_URL || '').trim();
 
-// Deduce the base URL for images from API_URL
-export const BASE_URL = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
+export const API_URL = (() => {
+    if (!envApiUrl || envApiUrl === '/api') return '/api';
+    const cleanUrl = envApiUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+})();
+
+// Deduce the base URL for images and static assets from API_URL
+export const BASE_URL = (() => {
+    if (!envApiUrl || envApiUrl === '/api') return '';
+    const cleanUrl = envApiUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl.slice(0, -4) : cleanUrl;
+})();
 
 const api = axios.create({
     baseURL: API_URL,
