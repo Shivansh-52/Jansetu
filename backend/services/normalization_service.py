@@ -1,15 +1,22 @@
-from deep_translator import GoogleTranslator
-from indic_transliteration import sanscript
-from indic_transliteration.sanscript import transliterate
-from langdetect import detect
 import re
+import concurrent.futures
 
 class NormalizationService:
     def __init__(self):
-        self.translator = GoogleTranslator(source='auto', target='hi')
+        self._translator = None
+
+    def _get_translator(self):
+        if self._translator is None:
+            try:
+                from deep_translator import GoogleTranslator
+                self._translator = GoogleTranslator(source='auto', target='hi')
+            except Exception:
+                self._translator = None
+        return self._translator
 
     def detect_language(self, text):
         try:
+            from langdetect import detect
             return detect(text)
         except:
             return "en" # Fallback
@@ -26,23 +33,27 @@ class NormalizationService:
         ]
         if any(k in lower for k in error_keywords):
             return True
-        # If response starts with html tags or is suspiciously long compared to short input
         if lower.startswith("<") or "http" in lower:
             return True
         return False
 
     def translate_to_hindi(self, text):
         """
-        Translates text to Hindi (Devanagari script)
+        Translates text to Hindi (Devanagari script) with a strict 2-second timeout.
         """
+        translator = self._get_translator()
+        if not translator:
+            return text
+
         try:
-            translated = self.translator.translate(text)
-            if self._is_error_response(translated):
-                print(f"[TRANSLATE] Google Translate returned error response. Falling back to original text.")
-                return text
-            return translated
-        except Exception as e:
-            print(f"[TRANSLATE] Translation Error: {e}")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(translator.translate, text)
+                translated = future.result(timeout=2.0)
+                if self._is_error_response(translated):
+                    return text
+                return translated
+        except Exception:
+            # If translation times out or Google blocks, return original text immediately
             return text
 
     def transliterate_to_hinglish(self, hindi_text):
@@ -54,33 +65,37 @@ class NormalizationService:
             return ""
 
         try:
+            from indic_transliteration import sanscript
+            from indic_transliteration.sanscript import transliterate
             roman_text = transliterate(hindi_text, sanscript.DEVANAGARI, sanscript.ITRANS)
             return roman_text.lower()
-        except Exception as e:
-            print(f"Transliteration Error: {e}")
+        except Exception:
             return hindi_text
 
     def clean_text(self, text):
         """
         Simple cleanup: lowercase, remove special chars
         """
-        text = text.lower()
-        return text
+        return text.lower()
 
     def normalize(self, text):
         """
-        Main pipeline:
-        1. Detect Language
-        2. If NOT Hindi/Hinglish (Devanagari or Roman Hindi), Translate to Hindi
-        3. Transliterate Hindi -> Hinglish (Roman)
-        4. Clean
+        Fast, resilient normalization:
+        1. If already ASCII / English, clean and return directly (no slow external network calls)
+        2. If Devanagari script, transliterate to Roman Hinglish
+        3. Only use Google Translate with timeout if mixed/non-English text
         """
         if not text:
             return ""
 
         original_text = text.strip()
-        lang = self.detect_language(original_text)
         
+        # Fast path: If text is standard English/ASCII, clean and return immediately
+        if original_text.isascii() and not re.search(r'[\u0900-\u097F]', original_text):
+            normalized = self.clean_text(original_text)
+            print(f"Normalization (fast-path): '{original_text}' -> '{normalized}'")
+            return normalized
+
         # Check for Devanagari characters
         if re.search(r'[\u0900-\u097F]', original_text):
             text_to_transliterate = original_text
@@ -100,10 +115,8 @@ class NormalizationService:
         else:
             hinglish = text_to_transliterate
 
-        # Cleanup
         normalized_text = self.clean_text(hinglish)
         
-        # Final safeguard: if normalized text somehow has error string or is empty, use original
         if self._is_error_response(normalized_text) or not normalized_text.strip():
             normalized_text = original_text.lower()
 
