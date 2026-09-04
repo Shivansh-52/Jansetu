@@ -64,11 +64,25 @@ export const submitComplaint = async (formData) => {
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
     }
-    // Do NOT set Content-Type so browser sets correct multipart/form-data with boundary
-    const response = await axios.post(`${API_URL}/complaint/submit`, formData, {
-        headers
+    
+    // Attempt request with automatic retry for server cold starts (502 / 503 / network drop)
+    const makeRequest = () => axios.post(`${API_URL}/complaint/submit`, formData, {
+        headers,
+        timeout: 45000
     });
-    return response.data;
+
+    try {
+        const response = await makeRequest();
+        return response.data;
+    } catch (err) {
+        // If server was sleeping or restarting (502/503/timeout), retry once after 2.5s
+        if (!err.response || err.response.status === 502 || err.response.status === 503 || err.code === 'ECONNABORTED') {
+            await new Promise(r => setTimeout(r, 2500));
+            const retryResponse = await makeRequest();
+            return retryResponse.data;
+        }
+        throw err;
+    }
 };
 
 export const getUserComplaints = async (userId) => {
