@@ -248,3 +248,141 @@ def submit_feedback():
     )
     
     return jsonify({'message': 'Feedback submitted'}), 200
+
+
+# ============ ⭐ 4. CITIZEN RESOLUTION CONFIRMATION (TWO-TIER VERIFICATION) ============
+@complaint_bp.route('/citizen-confirm', methods=['POST'])
+def citizen_confirm_resolution():
+    """
+    Tier 2 Verification: Citizen confirms whether the issue is actually resolved.
+    Action:
+      - 'confirm': Sets status to 'Verified', completes lifecycle, awards 30 Karma Points.
+      - 'reopen': Sets status to 'Reopened', records citizen dissatisfaction reason, triggers auto-reassignment.
+    """
+    db = get_db()
+    data = request.json or {}
+    complaint_id = data.get('complaint_id')
+    decision = data.get('decision', 'confirm') # 'confirm' or 'reopen'
+    feedback = data.get('feedback', '')
+    rating = data.get('rating', 5)
+    channel = data.get('channel', 'App Confirmation')
+
+    if not complaint_id:
+        return jsonify({'error': 'complaint_id required'}), 400
+
+    try:
+        complaint = db.complaints.find_one({'_id': ObjectId(complaint_id)})
+    except Exception:
+        complaint = db.complaints.find_one({'ref_id': complaint_id})
+
+    if not complaint:
+        return jsonify({'error': 'Complaint not found'}), 404
+
+    import datetime
+    user_id = complaint.get('user_id')
+    ref_id = complaint.get('ref_id', str(complaint['_id']))
+
+    if decision == 'confirm':
+        db.complaints.update_one(
+            {'_id': complaint['_id']},
+            {
+                '$set': {
+                    'status': 'Verified',
+                    'citizen_verification.status': 'Confirmed',
+                    'citizen_verification.confirmed_at': datetime.datetime.utcnow(),
+                    'citizen_verification.channel': channel,
+                    'citizen_verification.citizen_feedback': feedback,
+                    'citizen_verification.satisfaction_rating': rating,
+                    'timeline.verified': datetime.datetime.utcnow(),
+                    'timeline.resolved': datetime.datetime.utcnow(),
+                    'last_updated': datetime.datetime.utcnow(),
+                    'dual_routing.local_status': 'Citizen Verified & Closed',
+                    'dual_routing.head_status': 'Resolution Audited & Approved'
+                }
+            }
+        )
+
+        # Award Citizen Karma Points
+        from services.gamification_service import gamification_service
+        gamification_service.award_points(user_id, 30, reason=f"Confirmed resolution for {ref_id}")
+
+        return jsonify({
+            'message': 'Thank you! Your resolution confirmation has officially closed the complaint. +30 Civic Karma awarded.',
+            'status': 'Verified',
+            'karma_awarded': 30
+        }), 200
+
+    else:
+        # Reopen flow
+        return reopen_complaint()
+
+
+# ============ ⭐ 1. MASTER COMPLAINT & SUB-REPORTS API ============
+@complaint_bp.route('/master/<master_ref_id>', methods=['GET'])
+def get_master_complaint_details(master_ref_id):
+    """Retrieve Master Complaint cluster and all merged supporting citizen reports."""
+    db = get_db()
+    master = db.complaints.find_one({
+        '$or': [{'ref_id': master_ref_id}, {'master_issue_id': master_ref_id}]
+    })
+
+    if not master:
+        return jsonify({'error': 'Master Complaint not found'}), 404
+
+    master['_id'] = str(master['_id'])
+    
+    # Also fetch all complaints tagged with this master id
+    sub_tickets = list(db.complaints.find({'master_issue_id': master_ref_id}))
+    for s in sub_tickets:
+        s['_id'] = str(s['_id'])
+
+    return jsonify({
+        'master_complaint': master,
+        'co_citizen_count': master.get('co_citizen_count', 1),
+        'sub_reports': master.get('sub_reports', []),
+        'linked_tickets': sub_tickets
+    }), 200
+
+
+# ============ 🎮 CIVIC MITRA GAMIFICATION APIS ============
+@complaint_bp.route('/gamification/profile/<uid>', methods=['GET'])
+def get_citizen_gamification_profile(uid):
+    """Retrieve citizen karma score, earned badges, and rank."""
+    db = get_db()
+    from bson.objectid import ObjectId
+    user = None
+    try:
+        user = db.users.find_one({'_id': ObjectId(uid)})
+    except Exception:
+        pass
+    if not user:
+        user = db.users.find_one({'email': uid})
+
+    if not user:
+        return jsonify({
+            'name': 'Civic Mitra Citizen',
+            'karma_points': 150,
+            'badges': ['Civic Pioneer'],
+            'rank': 12,
+            'level': 'Civic Guardian (Level 2)'
+        }), 200
+
+    points = user.get('karma_points', 100)
+    level_name = "Civic Legend" if points >= 1000 else ("Civic Champion" if points >= 500 else ("Civic Inspector" if points >= 250 else "Civic Pioneer"))
+
+    return jsonify({
+        'name': user.get('name', 'Citizen'),
+        'email': user.get('email', ''),
+        'karma_points': points,
+        'badges': user.get('badges', ['Civic Pioneer']),
+        'level': level_name
+    }), 200
+
+
+@complaint_bp.route('/gamification/leaderboard', methods=['GET'])
+def get_gamification_leaderboard():
+    """Get Civic Mitra Citizen Leaderboard."""
+    from services.gamification_service import gamification_service
+    leaderboard = gamification_service.get_leaderboard()
+    return jsonify(leaderboard), 200
+

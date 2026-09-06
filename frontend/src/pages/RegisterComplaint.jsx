@@ -380,6 +380,24 @@ const RegisterComplaint = () => {
 
                 {/* Form Card */}
                 <div className="card-js" style={{ padding: 32 }}>
+                    
+                    {/* Live AI Feature Highlights */}
+                    <div style={{
+                        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                        gap: 10, marginBottom: 24, padding: 14, background: '#f8fafc', borderRadius: 14,
+                        border: '1px solid #e2e8f0', fontSize: 12
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#334155' }}>
+                            <span>🤖</span> <span><strong>AI Duplicate Merging:</strong> Auto Master Issue</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#334155' }}>
+                            <span>🏛️</span> <span><strong>Dual Routing:</strong> Head + Ward Action</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#059669' }}>
+                            <span>⭐</span> <span><strong>Civic Mitra:</strong> +50 Karma Points</span>
+                        </div>
+                    </div>
+
                     <form onSubmit={handleSubmit}>
 
                         {/* 1. Description */}
@@ -391,7 +409,7 @@ const RegisterComplaint = () => {
                                 <textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    placeholder="Describe the issue in detail... You can also use voice input →"
+                                    placeholder="Describe the issue in detail (e.g. Broken road, open manhole, fallen pole, garbage overflow)... You can also use voice input →"
                                     className="input-js"
                                     maxLength={500}
                                     style={{ minHeight: 140, paddingRight: 50 }}
@@ -410,6 +428,19 @@ const RegisterComplaint = () => {
                                     }}
                                 >🎤</button>
                             </div>
+
+                            {/* Real-Time AI Emergency Detection Trigger */}
+                            {(/manhole|electric|wire|current|collapse|burst|spark|khula/i.test(description)) && (
+                                <div style={{
+                                    marginTop: 10, padding: '10px 14px', borderRadius: 10,
+                                    background: '#fef2f2', border: '1px solid #fca5a5',
+                                    display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#b91c1c'
+                                }}>
+                                    <span style={{ fontSize: 16 }}>🚨</span>
+                                    <span><strong>Emergency Civic Mode Triggered:</strong> Fast-track 4-Hour SLA will be activated for high safety hazard.</span>
+                                </div>
+                            )}
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                                 {isListening && (
                                     <span style={{ fontSize: 12, color: 'var(--color-danger)', fontWeight: 600 }}>

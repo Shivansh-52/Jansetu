@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import BackButton from './components/BackButton';
+import JudgeGuideModal from './components/JudgeGuideModal';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -10,7 +11,9 @@ import WorkerDashboard from './pages/WorkerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import GovernanceDashboard from './pages/GovernanceDashboard';
 import DeptOfficerDashboard from './pages/DeptOfficerDashboard';
-import OfficialAuth from './pages/OfficialAuth'; // Official Auth Page
+import ContractorDashboard from './pages/ContractorDashboard';
+import AssetPassport from './pages/AssetPassport';
+import OfficialAuth from './pages/OfficialAuth';
 import Services from './pages/Services';
 import About from './pages/About';
 import PublicTracking from './pages/PublicTracking';
@@ -27,12 +30,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
     try {
         const user = JSON.parse(userStr);
-        // If current role is not in allowedRoles, redirect to home
         if (allowedRoles && !allowedRoles.includes(user.role)) {
             return <Navigate to="/" replace />;
         }
     } catch (e) {
-        // If JSON parsing fails (corrupted data), force logout
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         return <Navigate to="/login" replace />;
@@ -41,24 +42,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return children;
 };
 
-// Citizen or Guest Route - Only allows citizens or guests (not logged in), blocks other roles
+// Citizen or Guest Route
 const CitizenOrGuestRoute = ({ children }) => {
     const userStr = localStorage.getItem('user');
-
-    // Guest access is allowed (not logged in)
-    if (!userStr) {
-        return children;
-    }
+    if (!userStr) return children;
 
     try {
         const user = JSON.parse(userStr);
-        // Only citizens can access complaint registration when logged in
         if (user.role !== 'citizen') {
-            // Redirect non-citizens to home
             return <Navigate to="/" replace />;
         }
     } catch (e) {
-        // If JSON parsing fails, allow access (treat as guest)
         return children;
     }
 
@@ -78,13 +72,13 @@ const RedirectIfAuthenticated = ({ children }) => {
             dept_officer: '/dept-officer-dashboard',
             admin: '/admin-dashboard',
             governance: '/governance-dashboard',
+            contractor: '/contractor-dashboard',
         };
         const target = routes[user.role];
         if (target) {
             return <Navigate to={target} replace />;
         }
     } catch {
-        // If parsing fails, treat as not authenticated for this redirect
         return children;
     }
 
@@ -96,8 +90,9 @@ const App = () => {
         <Router>
             <Navbar />
             <BackButton />
+            <JudgeGuideModal />
             <Routes>
-                {/* Public Routes (redirect logged-in users to their dashboard) */}
+                {/* Public Routes */}
                 <Route
                     path="/"
                     element={
@@ -139,6 +134,7 @@ const App = () => {
                     }
                 />
                 <Route path="/track" element={<PublicTracking />} />
+                <Route path="/asset-passport" element={<AssetPassport />} />
                 <Route 
                     path="/register-complaint" 
                     element={
@@ -163,11 +159,7 @@ const App = () => {
                 {/* Complaint Details */}
                 <Route
                     path="/complaint/:id"
-                    element={
-                        <ProtectedRoute>
-                            <ComplaintDetails />
-                        </ProtectedRoute>
-                    }
+                    element={<ComplaintDetails />}
                 />
 
                 {/* Worker Dashboard */}
@@ -176,6 +168,16 @@ const App = () => {
                     element={
                         <ProtectedRoute allowedRoles={['worker']}>
                             <WorkerDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Contractor Dashboard */}
+                <Route
+                    path="/contractor-dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={['contractor', 'admin', 'governance']}>
+                            <ContractorDashboard />
                         </ProtectedRoute>
                     }
                 />
@@ -218,3 +220,4 @@ const App = () => {
 };
 
 export default App;
+

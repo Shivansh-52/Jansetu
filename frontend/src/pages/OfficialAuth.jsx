@@ -60,27 +60,40 @@ const OfficialAuth = () => {
         }
     };
 
+    const ROLE_ROUTES = {
+        citizen: '/user-dashboard',
+        worker: '/worker-dashboard',
+        dept_officer: '/dept-officer-dashboard',
+        contractor: '/contractor-dashboard',
+        admin: '/admin-dashboard',
+        governance: '/governance-dashboard'
+    };
+
+    const handleQuickOfficialLogin = async (email, pass) => {
+        setFormData(prev => ({ ...prev, email, password: pass }));
+        setLoading(true); setError('');
+        try {
+            const data = await loginUser(email, pass, 'admin_portal');
+            const role = data.user?.role;
+            navigate(ROLE_ROUTES[role] || '/admin-dashboard');
+        } catch (err) {
+            setError(err.response?.data?.error || err.response?.data?.message || 'Authentication failed.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true); setError('');
         try {
             if (isLogin) {
-                // 'admin_portal' context: only administration roles should be allowed here.
                 const data = await loginUser(formData.email, formData.password, 'admin_portal');
                 if (!data?.user) throw { response: { data: { error: 'Invalid response.' } } };
                 const role = data.user.role;
 
-                // Enforce that only admin / governance can use this form
-                if (role !== 'admin' && role !== 'governance') {
-                    // Clear any token/user that may have been set
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    throw { response: { data: { error: 'Access restricted to administration roles only.' } } };
-                }
-
-                if (role === 'admin') navigate('/admin-dashboard');
-                else if (role === 'governance') navigate('/governance-dashboard');
-                else setError('Unauthorized role.');
+                const target = ROLE_ROUTES[role] || '/admin-dashboard';
+                navigate(target);
             } else {
                 // Registration requires verified access code
                 if (!accessCodeVerified) {
@@ -99,7 +112,7 @@ const OfficialAuth = () => {
                 setAccessCodeVerified(false);
             }
         } catch (err) {
-            setError(err.response?.data?.error || 'Authentication failed.');
+            setError(err.response?.data?.error || err.response?.data?.message || 'Authentication failed.');
         } finally { setLoading(false); }
     };
 
@@ -173,6 +186,51 @@ const OfficialAuth = () => {
                             background: '#fef2f2', padding: '4px 12px', borderRadius: 20
                         }}>Authorized Personnel Only</span>
                     </div>
+
+                    {isLogin && (
+                        <div style={{
+                            marginBottom: 20, padding: 12, borderRadius: 14,
+                            background: 'var(--bg-secondary)', border: '1px solid var(--border-light)'
+                        }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                                ⚡ Quick 1-Click Access
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                                <button type="button" onClick={() => handleQuickOfficialLogin('gov@jansetu.ai', 'gov123')}
+                                    style={{
+                                        padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: 6, color: '#4f46e5'
+                                    }}>
+                                    🏛️ Governance
+                                </button>
+                                <button type="button" onClick={() => handleQuickOfficialLogin('admin@jansetu.ai', 'admin123')}
+                                    style={{
+                                        padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: 6, color: '#059669'
+                                    }}>
+                                    🛡️ Admin
+                                </button>
+                                <button type="button" onClick={() => handleQuickOfficialLogin('contractor@jansetu.ai', 'contractor123')}
+                                    style={{
+                                        padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: 6, color: '#ea580c'
+                                    }}>
+                                    👷‍♂️ Contractor
+                                </button>
+                                <button type="button" onClick={() => handleQuickOfficialLogin('officer@jansetu.ai', 'officer123')}
+                                    style={{
+                                        padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7'
+                                    }}>
+                                    📋 Dept Officer
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit}>
                         {error && (

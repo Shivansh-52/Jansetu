@@ -55,6 +55,12 @@ app.register_blueprint(worker_bp, url_prefix='/api/worker')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 from routes.dept_officer_routes import dept_officer_bp
 app.register_blueprint(dept_officer_bp, url_prefix='/api/dept-officer')
+from routes.governance_routes import governance_bp
+app.register_blueprint(governance_bp, url_prefix='/api/governance')
+from routes.contractor_routes import contractor_bp
+app.register_blueprint(contractor_bp, url_prefix='/api/contractor')
+from routes.asset_routes import asset_bp
+app.register_blueprint(asset_bp, url_prefix='/api/asset')
 from routes.notification_routes import notification_bp
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')
 
@@ -62,6 +68,7 @@ app.register_blueprint(notification_bp, url_prefix='/api/notifications')
 @app.route('/api/health')
 def health_check():
     return {"status": "ok"}, 200
+
 
 # Serve Uploaded Images (for frontend display)
 @app.route('/uploads/<filename>')

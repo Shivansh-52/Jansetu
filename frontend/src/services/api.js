@@ -265,3 +265,82 @@ export const getUPDistricts = async () => {
     return response.data;
 };
 
+// ============ ⭐ 4. CITIZEN RESOLUTION CONFIRMATION ============
+export const citizenConfirmResolution = async ({ complaint_id, decision, feedback, rating, channel }) => {
+    const response = await api.post('/complaint/citizen-confirm', {
+        complaint_id, decision, feedback, rating, channel
+    });
+    return response.data;
+};
+
+// ============ ⭐ 4. GOVERNMENT FIELD INSPECTION (TIER 1) ============
+export const govtFieldInspect = async ({ complaint_id, verdict, remarks, qc_score }) => {
+    const response = await api.post('/dept-officer/inspect', {
+        complaint_id, verdict, remarks, qc_score
+    });
+    return response.data;
+};
+
+// ============ ⭐ 1. MASTER COMPLAINT DETAILS ============
+export const getMasterComplaintDetails = async (masterRefId) => {
+    const response = await api.get(`/complaint/master/${masterRefId}`);
+    return response.data;
+};
+
+// ============ ⭐ 3. CONTRACTOR PORTAL API ============
+export const getContractorDashboard = async (contractorId = '') => {
+    const query = contractorId ? `?contractor_id=${encodeURIComponent(contractorId)}` : '';
+    const response = await api.get(`/contractor/dashboard${query}`);
+    return response.data;
+};
+
+export const uploadContractorRepair = async (formData) => {
+    const token = localStorage.getItem('token');
+    const response = await axios.post(`${API_URL}/contractor/upload-repair`, formData, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+    return response.data;
+};
+
+// ============ ⭐ 3. DIGITAL ASSET PASSPORT API ============
+export const getAssetsList = async (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    const response = await api.get(`/asset/list${query ? '?' + query : ''}`);
+    return response.data;
+};
+
+export const getAssetPassport = async (assetId) => {
+    const response = await api.get(`/asset/${assetId}`);
+    return response.data;
+};
+
+// ============ ⭐ 5. ZONE INTELLIGENCE & CIVIC HOTSPOT API ============
+export const getZoneIntelligence = async (district = 'Lucknow', zone = '', ward = '') => {
+    const params = new URLSearchParams();
+    if (district) params.append('district', district);
+    if (zone) params.append('zone', zone);
+    if (ward) params.append('ward', ward);
+    const response = await api.get(`/governance/zone-intelligence?${params.toString()}`);
+    return response.data;
+};
+
+// ============ ⭐ 2. DUAL GOVERNANCE STATS ============
+export const getDualGovernanceStats = async () => {
+    const response = await api.get('/governance/dual-governance');
+    return response.data;
+};
+
+// ============ 🎮 CIVIC MITRA GAMIFICATION ============
+export const getCitizenGamification = async (userId) => {
+    const response = await api.get(`/complaint/gamification/profile/${userId}`);
+    return response.data;
+};
+
+export const getGamificationLeaderboard = async () => {
+    const response = await api.get('/complaint/gamification/leaderboard');
+    return response.data;
+};
+
+

@@ -45,6 +45,7 @@ const Navbar = () => {
         switch (user.role) {
             case 'citizen': return '/user-dashboard';
             case 'worker': return '/worker-dashboard';
+            case 'contractor': return '/contractor-dashboard';
             case 'dept_officer': return '/dept-officer-dashboard';
             case 'admin': return '/admin-dashboard';
             case 'governance': return '/governance-dashboard';
@@ -57,10 +58,14 @@ const Navbar = () => {
     // Public navigation links are only shown when no user is logged in.
     const navLinks = !user ? [
         { label: 'Home', to: '/' },
+        { label: 'Asset Passport', to: '/asset-passport' },
         { label: 'Services', to: '/services' },
         { label: 'About', to: '/about' },
         { label: 'Track', to: '/track' },
-    ] : [];
+    ] : [
+        { label: 'Asset Passport', to: '/asset-passport' },
+    ];
+
 
     return (
         <>

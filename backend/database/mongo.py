@@ -52,8 +52,22 @@ def init_db(app=None):
         print("[DB] Warning: MONGO_URI is not set!")
         return None
 
+    if 'localhost' in uri or '127.0.0.1' in uri:
+        try:
+            client = MongoClient(
+                uri,
+                serverSelectionTimeoutMS=3000,
+                connectTimeoutMS=3000,
+            )
+            client.admin.command('ping')
+            db = client[db_name]
+            print(f"[DB] Connected to LOCAL MongoDB: {db_name}")
+            return db
+        except Exception as e:
+            print(f"[DB] Local MongoDB connection failed: {e}")
+
     # ── Strategy 1: Standard Certifi CA (Recommended for Atlas on Linux/Cloud/Windows) ──
-    if CA_FILE and 'mongodb' in uri:
+    if CA_FILE and ('mongodb+srv' in uri or 'tls=true' in uri.lower() or 'ssl=true' in uri.lower()):
         try:
             client = MongoClient(
                 uri,
@@ -93,7 +107,7 @@ def init_db(app=None):
         )
         client.admin.command('ping')
         db = client[db_name]
-        print(f"[DB] Connected to MongoDB Atlas (standard): {db_name}")
+        print(f"[DB] Connected to MongoDB (standard): {db_name}")
         return db
     except Exception as e:
         print(f"[DB] Strategy 3 failed: {type(e).__name__}: {str(e)[:120]}")
@@ -107,7 +121,7 @@ def init_db(app=None):
         )
         client.admin.command('ping')
         db = client[db_name]
-        print(f"[DB] Connected to LOCAL MongoDB: {db_name}")
+        print(f"[DB] Connected to LOCAL MongoDB fallback: {db_name}")
         return db
     except Exception as e:
         print(f"[DB] ALL connection strategies failed. Last error: {e}")

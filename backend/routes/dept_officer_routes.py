@@ -302,3 +302,69 @@ def smart_assign_complaint():
         return jsonify(result), 200
     else:
         return jsonify(result), 400
+
+
+# ============ ⭐ 4. GOVERNMENT FIELD ENGINEER INSPECTION (TIER 1) ============
+@dept_officer_bp.route('/inspect', methods=['POST'])
+def government_field_inspect():
+    """
+    Tier 1 Verification: Government Field Engineer inspects the completed repair.
+    Verdict:
+      - 'Passed': Work verified by engineer. Advances complaint to 'Govt Inspected' / 'Resolved' awaiting citizen confirmation.
+      - 'Failed': Rejects work back to worker/contractor for re-execution.
+    """
+    db = get_db()
+    data = request.json or {}
+    complaint_id = data.get('complaint_id')
+    verdict = data.get('verdict', 'Passed') # 'Passed' or 'Failed'
+    inspector_id = data.get('inspector_id', 'GOVT-ENG-01')
+    inspector_name = data.get('inspector_name', 'Executive Engineer (Civil)')
+    remarks = data.get('remarks', 'Field site inspected and quality verified.')
+    qc_score = data.get('qc_score', 95.0)
+
+    if not complaint_id:
+        return jsonify({'error': 'complaint_id required'}), 400
+
+    try:
+        complaint = db.complaints.find_one({'_id': ObjectId(complaint_id)})
+    except Exception:
+        complaint = db.complaints.find_one({'ref_id': complaint_id})
+
+    if not complaint:
+        return jsonify({'error': 'Complaint not found'}), 404
+
+    is_passed = (verdict == 'Passed')
+    new_status = 'Resolved' if is_passed else 'In Progress'
+
+    db.complaints.update_one(
+        {'_id': complaint['_id']},
+        {
+            '$set': {
+                'status': new_status,
+                'govt_inspection.status': verdict,
+                'govt_inspection.inspector_id': inspector_id,
+                'govt_inspection.inspector_name': inspector_name,
+                'govt_inspection.inspected_at': datetime.datetime.utcnow(),
+                'govt_inspection.remarks': remarks,
+                'govt_inspection.qc_score': float(qc_score),
+                'timeline.govt_inspected': datetime.datetime.utcnow(),
+                'timeline.resolved': datetime.datetime.utcnow() if is_passed else None,
+                'last_updated': datetime.datetime.utcnow(),
+                'dual_routing.local_status': 'Govt Inspected & Quality Verified' if is_passed else 'Govt Inspection Failed — Rework Ordered'
+            },
+            '$push': {
+                'worker_remarks': f"[Govt Field Engineer Inspection - {verdict}]: {remarks} (QC Score: {qc_score}%)"
+            }
+        }
+    )
+
+    return jsonify({
+        'message': f'Government Inspection recorded as {verdict}. ' + ('Awaiting Citizen Confirmation.' if is_passed else 'Rework requested from field team.'),
+        'status': new_status,
+        'inspection': {
+            'verdict': verdict,
+            'inspector': inspector_name,
+            'qc_score': qc_score
+        }
+    }), 200
+

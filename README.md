@@ -1,8 +1,56 @@
-# 🚀 Samadhan Path
+# 🚀 Samadhan Path (JanSetu AI)
 
-### AI-Powered Civic Grievance Redressal & Public Service Coordination Platform
+### AI-Powered Civic Grievance Redressal, Dual Governance & Infrastructure Accountability Platform
+> **Smart India Hackathon Edition** — Built with the 5 Breakthrough Pillars of Next-Gen Civic Governance.
 
-> **Samadhan Path** is a scalable civic grievance platform designed to connect citizens, government departments, field workers, administrative officers, and governance authorities through a transparent, accountable, and technology-driven workflow.
+---
+
+## 🏆 Evaluator & Judge Quick-Start Guide
+
+### ⚡ 1-Click Universal Demo Credentials
+
+| Role | Demo Email | Password | Target Dashboard |
+|---|---|---|---|
+| 👷‍♂️ **Contractor** | `contractor@jansetu.ai` | `contractor123` | `/contractor-dashboard` |
+| 🏛️ **Governance Head** | `gov@jansetu.ai` | `gov123` | `/governance-dashboard` |
+| 🛡️ **Administrator** | `admin@jansetu.ai` | `admin123` | `/admin-dashboard` |
+| 📋 **Dept Officer** | `officer@jansetu.ai` | `officer123` | `/dept-officer-dashboard` |
+| 🔧 **Field Worker** | `worker@jansetu.ai` | `worker123` | `/worker-dashboard` |
+| 🧑‍💻 **Citizen** | `citizen@jansetu.ai` | `citizen123` | `/user-dashboard` |
+
+*(Tip: In the web interface, click the floating **"🏆 Evaluator Guide / Demo Tour"** button at the bottom-right or the **1-Click Demo** buttons on `/login` to sign in instantly with zero typing).*
+
+---
+
+## ⭐ 5 Breakthrough Features
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   5 PILLARS OF SAMADHAN PATH                                │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. 🚨 AI Validation & Emergency Mode: Instant high-threat triage & 150m Master Clustering   │
+│ 2. 🏛️ Dual-Level Governance: State/District Monitoring + Local Execution + Zone Hotspot RCA │
+│ 3. 📜 Contractor & Asset DLP: Defect Liability Period timer + Free repair assignment        │
+│ 4. 🔍 Two-Tier Verification: Tier 1 Govt Engineer Proof + Tier 2 Citizen Web/IVR Callback  │
+│ 5. 🎮 Civic Mitra Gamification: Citizen Karma, Badges & Ward Champion Leaderboards          │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🗺️ Recommended Hackathon Demo Flow for Judges:
+
+1. **Test Emergency & Clustering (`/register-complaint`)**:
+   - Type *"Live sparking electrical wire near metro station"* $\to$ Watch real-time **Emergency Civic Mode** escalate to High Priority.
+   - Multiple reports in the same 150m geofence auto-cluster into a single **Master Issue**.
+2. **Inspect Dual Governance & Hotspots (`/governance-dashboard`)**:
+   - Access **Zone Intelligence** (State $\to$ District $\to$ City $\to$ Zone $\to$ Ward $\to$ Local Authority).
+   - View the **Civic Hotspot Map** & AI-driven **Root Cause Analysis (RCA)** diagnostics.
+3. **Inspect Digital Asset Passport & DLP (`/asset-passport` & `/contractor-dashboard`)**:
+   - Explore public assets with QR Codes and active warranty timers.
+   - Log in as Contractor (`contractor@jansetu.ai`) to see assigned DLP liability repair requests.
+4. **Inspect Two-Tier Resolution Verification (`/track`)**:
+   - View complaint details showing **Govt Field Officer Inspection Evidence** (Tier 1) and **Citizen Confirmation / Appeal** (Tier 2) with simulated IVR voice callback.
+5. **View Civic Mitra Gamification (`/user-dashboard`)**:
+   - Track Citizen Karma points, unlockable badges (*Pothole Hunter*, *Civic Guardian*), and leaderboards.
 
 ---
 
@@ -10,57 +58,12 @@
 
 | Category | Details |
 |---|---|
-| **Project Name** | Samadhan Path |
-| **Domain** | Civic Technology / Governance |
-| **Purpose** | Grievance Registration, Routing, Resolution & Verification |
-| **Target Users** | Citizens, Workers, Department Officers, Admins, Governance Authorities |
-| **Coverage** | Cities, Districts, States, Departments & Public Authorities |
-| **Core Technologies** | React, Flask, MongoDB, AI/ML |
-| **Platform Type** | Web-Based Civic Grievance Management System |
-| **Scalability** | Designed for deployment across India |
-
----
-
-# 🌐 About Samadhan Path
-
-Samadhan Path provides a unified platform for:
-
-- Registering civic grievances
-- Automatically routing complaints
-- Monitoring complaint progress
-- Assigning workers
-- Tracking SLA timelines
-- Detecting duplicate complaints
-- Verifying completed work
-- Collecting citizen feedback
-- Monitoring department performance
-- Generating governance-level analytics
-
-The platform is **not limited to a particular municipality, city, district, or state**.
-
-It can be adapted for different public authorities and governance structures across India.
-
----
-
-# ✨ Key Features
-
-| Feature | Description |
-|---|---|
-| 📝 **Complaint Registration** | Citizens can submit civic grievances digitally |
-| 📷 **Image-Based Reporting** | Issues can be reported using photographs |
-| 🎤 **Voice Support** | Supports voice-assisted complaint submission |
-| 📍 **Location Support** | Location information can be attached to grievances |
-| 🤖 **AI Classification** | AI assists in identifying complaint categories |
-| 🔀 **Automatic Routing** | Complaints can be routed to relevant departments |
-| 🔁 **Duplicate Detection** | Similar complaints can be grouped together |
-| 🚨 **Priority Assessment** | Important grievances can receive higher priority |
-| 👷 **Worker Assignment** | Department officers can assign grievances to workers |
-| ⏱️ **SLA Monitoring** | Complaint resolution timelines can be tracked |
-| ✅ **Resolution Verification** | Completed work can be verified using proof and AI assistance |
-| ⭐ **Citizen Feedback** | Citizens can rate the quality of resolution |
-| 📊 **Analytics Dashboard** | Authorities can monitor performance metrics |
-| 🔐 **Role-Based Access** | Different users receive different access levels |
-| 🗺️ **Hotspot Analysis** | Recurring complaint locations can be identified |
+| **Project Name** | Samadhan Path (JanSetu AI) |
+| **Domain** | Civic Technology / Next-Gen Governance |
+| **Purpose** | Grievance Redressal, Dual Governance Routing, Contractor Accountability & Verification |
+| **Target Users** | Citizens, Contractors, Field Workers, Dept Officers, Admins, Governance Oversight |
+| **Core Technologies** | React + Vite, Flask, MongoDB Atlas, NLP Engine, YOLO Image Detection |
+| **Scalability** | Multi-Tier Hierarchical Governance across India |
 
 ---
 

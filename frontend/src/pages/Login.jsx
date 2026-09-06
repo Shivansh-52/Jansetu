@@ -3,6 +3,24 @@ import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../services/api';
 import { motion } from 'framer-motion';
 
+const ROLE_ROUTES = {
+    citizen: '/user-dashboard',
+    worker: '/worker-dashboard',
+    dept_officer: '/dept-officer-dashboard',
+    contractor: '/contractor-dashboard',
+    admin: '/admin-dashboard',
+    governance: '/governance-dashboard'
+};
+
+const DEMO_LOGINS = [
+    { role: 'contractor', title: 'Contractor', email: 'contractor@jansetu.ai', pass: 'contractor123', icon: '👷‍♂️', color: '#ea580c' },
+    { role: 'governance', title: 'Governance', email: 'gov@jansetu.ai', pass: 'gov123', icon: '🏛️', color: '#4f46e5' },
+    { role: 'dept_officer', title: 'Dept Officer', email: 'officer@jansetu.ai', pass: 'officer123', icon: '📋', color: '#0284c7' },
+    { role: 'admin', title: 'Admin', email: 'admin@jansetu.ai', pass: 'admin123', icon: '🛡️', color: '#059669' },
+    { role: 'worker', title: 'Worker', email: 'worker@jansetu.ai', pass: 'worker123', icon: '🔧', color: '#d97706' },
+    { role: 'citizen', title: 'Citizen', email: 'citizen@jansetu.ai', pass: 'citizen123', icon: '🧑‍💻', color: '#2563eb' }
+];
+
 const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
@@ -15,50 +33,35 @@ const Login = () => {
         if (user) {
             try {
                 const parsed = JSON.parse(user);
-                const routes = {
-                    citizen: '/user-dashboard',
-                    worker: '/worker-dashboard',
-                    dept_officer: '/dept-officer-dashboard',
-                    admin: '/admin-dashboard',
-                    governance: '/governance-dashboard'
-                };
-                navigate(routes[parsed.role] || '/', { replace: true });
+                navigate(ROLE_ROUTES[parsed.role] || '/', { replace: true });
             } catch { }
         }
     }, [navigate]);
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+    const performLogin = async (loginEmail, loginPass) => {
         setError('');
         setLoading(true);
         try {
-            // 'public' context: only citizen / worker / dept_officer should be allowed here.
-            const res = await loginUser(email, password, 'public');
-            const role = res.user.role;
-
-            // Block administration roles from using the public login form
-            if (role === 'admin' || role === 'governance') {
-                // Clear any token/user that may have been set
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                setError('Administration roles must sign in from the Official Authority portal.');
-                setLoading(false);
-                return;
-            }
-
-            const routes = {
-                citizen: '/user-dashboard',
-                worker: '/worker-dashboard',
-                dept_officer: '/dept-officer-dashboard',
-                admin: '/admin-dashboard',
-                governance: '/governance-dashboard',
-            };
-            navigate(routes[role] || '/', { replace: true });
+            const res = await loginUser(loginEmail, loginPass, 'public');
+            const role = res.user?.role;
+            const targetRoute = ROLE_ROUTES[role] || '/';
+            navigate(targetRoute, { replace: true });
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+            setError(err.response?.data?.error || err.response?.data?.message || 'Invalid credentials. Please try again.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        await performLogin(email, password);
+    };
+
+    const handleQuickLogin = (demo) => {
+        setEmail(demo.email);
+        setPassword(demo.pass);
+        performLogin(demo.email, demo.pass);
     };
 
     return (
@@ -80,22 +83,61 @@ const Login = () => {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                style={{ width: '100%', maxWidth: 440, position: 'relative', zIndex: 1 }}
+                style={{ width: '100%', maxWidth: 460, position: 'relative', zIndex: 1 }}
             >
                 {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                <div style={{ textAlign: 'center', marginBottom: 28 }}>
+                    <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                         <div style={{
                             width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'white', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16
-                        }}>JS</div>
+                        }}>SP</div>
                         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)' }}>
-                            SamadhanPath<span style={{ color: 'var(--accent)' }}>AI</span>
+                            Samadhan<span style={{ color: 'var(--accent)' }}>Path</span>
                         </span>
                     </Link>
-                    <h2 style={{ fontSize: 28, marginBottom: 8 }}>Welcome back</h2>
-                    <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Sign in to access your dashboard</p>
+                    <h2 style={{ fontSize: 26, marginBottom: 6 }}>Welcome back</h2>
+                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Sign in or select a 1-click demo role</p>
+                </div>
+
+                {/* Quick 1-Click Role Login Bar */}
+                <div style={{
+                    marginBottom: 20, padding: 14, borderRadius: 16,
+                    background: 'white', border: '1px solid var(--border-light)',
+                    boxShadow: 'var(--shadow-card)'
+                }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
+                        <span>⚡ 1-Click Demo Login</span>
+                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Zero typing needed</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                        {DEMO_LOGINS.map((demo) => (
+                            <button
+                                key={demo.role}
+                                type="button"
+                                onClick={() => handleQuickLogin(demo)}
+                                style={{
+                                    padding: '8px 6px', borderRadius: 10, border: '1px solid var(--border-light)',
+                                    background: 'var(--bg-secondary)', cursor: 'pointer',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                                    fontSize: 11, fontWeight: 600, color: 'var(--text-primary)',
+                                    transition: 'all 0.15s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = demo.color;
+                                    e.currentTarget.style.background = 'white';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = 'var(--border-light)';
+                                    e.currentTarget.style.background = 'var(--bg-secondary)';
+                                }}
+                            >
+                                <span style={{ fontSize: 16 }}>{demo.icon}</span>
+                                <span>{demo.title}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Card */}
@@ -116,7 +158,7 @@ const Login = () => {
                     )}
 
                     <form onSubmit={handleLogin}>
-                        <div style={{ marginBottom: 20 }}>
+                        <div style={{ marginBottom: 18 }}>
                             <label style={{
                                 display: 'block', fontSize: 13, fontWeight: 600,
                                 color: 'var(--text-secondary)', marginBottom: 8
@@ -132,7 +174,7 @@ const Login = () => {
                             />
                         </div>
 
-                        <div style={{ marginBottom: 24 }}>
+                        <div style={{ marginBottom: 22 }}>
                             <label style={{
                                 display: 'block', fontSize: 13, fontWeight: 600,
                                 color: 'var(--text-secondary)', marginBottom: 8
@@ -159,7 +201,7 @@ const Login = () => {
                     </form>
 
                     <div style={{
-                        textAlign: 'center', marginTop: 24, paddingTop: 20,
+                        textAlign: 'center', marginTop: 22, paddingTop: 18,
                         borderTop: '1px solid var(--border-light)'
                     }}>
                         <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
@@ -172,9 +214,9 @@ const Login = () => {
                 </div>
 
                 {/* Official link */}
-                <div style={{ textAlign: 'center', marginTop: 20 }}>
+                <div style={{ textAlign: 'center', marginTop: 18 }}>
                     <Link to="/up2" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                        Official / Worker Login →
+                        Official Portal Access →
                     </Link>
                 </div>
             </motion.div>
