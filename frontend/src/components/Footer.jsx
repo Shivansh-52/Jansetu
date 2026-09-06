@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
     return (
         <footer style={{ background: '#0E1A33', color: '#94a3b8', paddingTop: 80, paddingBottom: 32 }}>
-            <div className="container-js">
+            <div className="container-SP">
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -20,12 +20,12 @@ const Footer = () => {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'white', fontFamily: 'var(--font-heading)',
                                 fontWeight: 700, fontSize: 14
-                            }}>JS</div>
+                            }}>SP</div>
                             <span style={{
                                 fontFamily: 'var(--font-heading)',
                                 fontWeight: 600, fontSize: 18, color: 'white'
                             }}>
-                                JanSetu<span style={{ color: 'var(--accent)' }}>AI</span>
+                                SamadhanPath<span style={{ color: 'var(--accent)' }}>AI</span>
                             </span>
                         </div>
                         <p style={{ fontSize: 14, lineHeight: 1.7, color: '#64748b', maxWidth: 280 }}>
@@ -96,14 +96,14 @@ const Footer = () => {
                         }}>Contact</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 14 }}>
                             <p style={{ color: '#94a3b8', margin: 0, fontSize: 14 }}>
-                                <strong style={{ color: 'white' }}>Municipal Corporation</strong><br />
-                                Sector 12, Civil Lines, New City - 110001
+                                <strong style={{ color: 'white' }}>Citizen Support</strong><br />
+                                    Serving citizens and authorities across India
                             </p>
                             <p style={{ color: '#94a3b8', margin: 0, fontSize: 14 }}>
                                 Helpline: <strong style={{ color: 'white' }}>1800-11-2345</strong>
                             </p>
                             <p style={{ color: '#94a3b8', margin: 0, fontSize: 14 }}>
-                                Email: <span style={{ color: 'var(--accent)' }}>helpdesk@jansetu.gov.in</span>
+                                Email: <span style={{ color: 'var(--accent)' }}>helpdesk@samadhanpath.gov.in</span>
                             </p>
                         </div>
                     </div>
@@ -121,7 +121,7 @@ const Footer = () => {
                     fontSize: 12, color: '#475569'
                 }}>
                     <p style={{ margin: 0, fontSize: 12, color: '#475569' }}>
-                        © 2026 JanSetu AI. All Rights Reserved. Built with ❤️ for India.
+                        © 2026 SamadhanPath AI. All Rights Reserved. Built with ❤️ for India.
                     </p>
                     <div style={{ display: 'flex', gap: 24 }}>
                         {['Privacy Policy', 'Terms of Service', 'Accessibility'].map(item => (

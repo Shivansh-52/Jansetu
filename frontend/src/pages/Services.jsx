@@ -9,8 +9,8 @@ const Services = () => {
         { title: "Real-Time Status Tracking", icon: "📍", desc: "Complete transparency from registration to resolution with live status updates and ETA.", features: ["SMS/Email Notifications", "Visual Timeline", "Estimated Resolution Time"] },
         { title: "Automated Department Routing", icon: "⚡", desc: "Zero manual intervention. AI instantly routes grievances to the exact responsible department.", features: ["Roads & Infrastructure", "Sanitation & Waste", "Water Supply", "Public Safety"] },
         { title: "Smart Verification System", icon: "🔍", desc: "Every resolution is verified using AI image analysis to ensure work is genuinely completed.", features: ["Before/After Comparison", "Geo-tagging Verification", "Anti-Fraud Detection"] },
-        { title: "Citizen Feedback Loop", icon: "⭐", desc: "Rate the quality of service after every resolution to help improve municipal performance.", features: ["5-Star Rating System", "Performance Scorecards", "Direct Escalation"] },
-        { title: "Open Data Analytics", icon: "📊", desc: "Publicly accessible dashboards showcasing city-wide performance and efficiency metrics.", features: ["City Health Index", "Department Leaderboards", "Transparency Reports"] },
+        { title: "Citizen Feedback Loop", icon: "⭐", desc: "Rate the quality of service after every resolution to help improve department performance.",  features: ["5-Star Rating System", "Performance Scorecards", "Direct Escalation"] },
+        { title: "Open Data Analytics", icon: "📊", desc: "Publicly accessible dashboards showcasing department-wide performance and service efficiency metrics.", features: ["Service Performance Index", "Department Leaderboards", "Transparency Reports"] },
     ];
 
     return (

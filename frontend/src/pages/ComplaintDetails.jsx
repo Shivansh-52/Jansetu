@@ -83,7 +83,7 @@ const ComplaintDetails = () => {
             }}>
                 <div className="container-js" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>JanSetu Record</p>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>SamadhanPath Record</p>
                         <h1 style={{ fontSize: 20, fontWeight: 600 }}>Complaint Details</h1>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -188,7 +188,7 @@ const ComplaintDetails = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
                         <div className="card-js" style={{ padding: 20 }}>
                             <span className="pill-js" style={{ fontSize: 10, marginBottom: 12, display: 'inline-block' }}>Before</span>
-                            <img src={`${BASE_URL}/uploads/${complaint.image_path}`} alt="Before"
+                            <img src={`http://localhost:5000/uploads/${complaint.image_path}`} alt="Before"
                                 style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 12, border: '1px solid var(--border-light)' }} />
                             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 8 }}>
                                 Uploaded • {new Date(complaint.created_at).toLocaleDateString()}

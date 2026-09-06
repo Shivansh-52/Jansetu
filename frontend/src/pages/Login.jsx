@@ -91,7 +91,7 @@ const Login = () => {
                             color: 'white', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16
                         }}>JS</div>
                         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)' }}>
-                            JanSetu<span style={{ color: 'var(--accent)' }}>AI</span>
+                            SamadhanPath<span style={{ color: 'var(--accent)' }}>AI</span>
                         </span>
                     </Link>
                     <h2 style={{ fontSize: 28, marginBottom: 8 }}>Welcome back</h2>

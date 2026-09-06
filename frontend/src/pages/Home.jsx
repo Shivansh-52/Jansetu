@@ -802,7 +802,7 @@ const Home = () => {
                                 </div>
                                 <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>Email</div>
-                                    <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--accent)' }}>helpdesk@jansetu.gov.in</div>
+                                    <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--accent)' }}>helpdesk@samadhanpath.gov.in</div>
                                 </div>
                             </div>
                         </div>

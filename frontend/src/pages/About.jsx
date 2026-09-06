@@ -14,7 +14,7 @@ const About = () => {
                 <div className="blob" style={{ width: 400, height: 400, background: 'rgba(43,107,255,0.06)', top: '-20%', left: '10%' }} />
                 <div className="container-js" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="pill-js pill-js--accent" style={{ marginBottom: 16 }}>Our Mission</div>
-                    <h1 style={{ fontSize: 'clamp(36px, 5vw, 56px)', marginBottom: 16 }}>About JanSetu AI</h1>
+                    <h1 style={{ fontSize: 'clamp(36px, 5vw, 56px)', marginBottom: 16 }}>About SamadhanPath</h1>
                     <p style={{ maxWidth: 560, margin: '0 auto', fontSize: 17 }}>
                         Bridging the gap between citizens and governance through AI-powered civic technology.
                     </p>
@@ -27,9 +27,9 @@ const About = () => {
                     <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
                         <h2 style={{ fontSize: 32, marginBottom: 16 }}>Our Vision</h2>
                         <p style={{ fontSize: 17, lineHeight: 1.8, marginBottom: 24 }}>
-                            JanSetu AI envisions a future where every civic complaint is heard, processed, and resolved efficiently.
-                            We leverage artificial intelligence to eliminate bureaucratic delays, ensure transparency, and create
-                            accountability at every level of municipal governance.
+                            SamadhanPath envisions a future where every civic complaint is heard, processed, and resolved efficiently.
+                            We leverage artificial intelligence to reduce administrative delays, ensure transparency, and create
+                            accountability across departments and levels of public governance.
                         </p>
                         <p style={{ fontSize: 17, lineHeight: 1.8 }}>
                             Our platform empowers citizens to report issues through text, voice, or image in any Indian language,
