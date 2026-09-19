@@ -299,7 +299,7 @@ const Register = () => {
                                     setState('Uttar Pradesh');
                                 }} className="btn-js" style={{ width: '100%', background: '#10b981' }}>Verify & Fetch Details</button>
                             </div>
-                        )}
+                        ) : null}
                     </motion.div>
                 </div>
             )}
