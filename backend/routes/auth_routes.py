@@ -396,7 +396,55 @@ def verify_otp():
     otp = data.get('otp_code') or data.get('otp')
     if otp != '123456':
         return jsonify({'error': 'Invalid OTP'}), 400
-    return jsonify({'message': 'OTP Verified'}), 200
+        
+    is_register = data.get('is_register', False)
+    if is_register:
+        return jsonify({'message': 'OTP Verified'}), 200
+        
+    # This is a Login Attempt via OTP
+    db = get_db()
+    identifier = data.get('aadhaar_or_mobile')
+    if not identifier:
+        return jsonify({'error': 'Missing identifier'}), 400
+        
+    # Find user
+    user = None
+    for collection in [db.users, db.workers, db.dept_officers, db.contractors, db.admins]:
+        # They could login with master_id, email, phone, or aadhaar
+        user = collection.find_one({
+            '$or': [
+                {'master_id': identifier},
+                {'email': identifier},
+                {'phone': identifier},
+                {'aadhaar': identifier}
+            ]
+        })
+        if user:
+            break
+            
+    if not user:
+        # Fallback for hackathon demo if they use a mock SSO ID
+        user = db.users.find_one({'email': 'tushar@gmail.com'}) or db.users.find_one()
+        if not user:
+            return jsonify({'error': 'User not found in system'}), 404
+            
+    import jwt
+    import datetime
+    token = jwt.encode({
+        'user_id': str(user['_id']),
+        'role': user.get('role', 'citizen'),
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    }, Config.JWT_SECRET, algorithm='HS256')
+    
+    user['_id'] = str(user['_id'])
+    # Remove sensitive info
+    user.pop('password_hash', None)
+    
+    return jsonify({
+        'message': 'SSO Login Successful',
+        'token': token,
+        'user': user
+    }), 200
 
 @auth_bp.route('/verify-aadhaar', methods=['POST'])
 def verify_aadhaar():
