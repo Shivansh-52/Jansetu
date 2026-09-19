@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './.env' });
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -71,13 +71,48 @@ async function seedDB() {
 mongoose.connection.once('open', seedDB);
 
 // APIs
-app.get('/api/health', (req, res) => res.json({ status: 'online', service: 'healthcare' }));
+app.get('/api/health-stats', async (req, res) => {
+    try {
+        const counts = await Patient.countDocuments();
+        // Just mocking documents count as patients * 2 for demo purposes
+        res.json({
+            service: 'Healthcare DB',
+            technology: 'MongoDB (Atlas)',
+            records: counts,
+            documents: counts * 2,
+            status: 'CONNECTED'
+        });
+    } catch (e) {
+        res.json({ service: 'Healthcare DB', status: 'ERROR' });
+    }
+});
 
 app.get('/api/patients/:patientId', async (req, res) => {
     try {
         const patient = await Patient.findOne({ patientId: req.params.patientId });
         if (!patient) return res.status(404).json({ error: 'Patient not found' });
         res.json(patient);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/patients', async (req, res) => {
+    try {
+        const { patientName, dob, contact } = req.body;
+        const patientId = 'HLT-' + Math.floor(Math.random() * 900000 + 100000);
+        const newPatient = new Patient({
+            patientId,
+            fullName: patientName,
+            dateOfBirth: dob,
+            contact: contact,
+            healthId: '91-' + Math.floor(Math.random() * 9000 + 1000) + '-' + Math.floor(Math.random() * 9000 + 1000),
+            bloodGroup: 'Unknown',
+            appointments: [],
+            documents: []
+        });
+        await newPatient.save();
+        res.status(201).json({ patientId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

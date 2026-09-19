@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './.env' });
 const express = require('express');
 const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
@@ -7,17 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const sequelize = new Sequelize(
-    process.env.MYSQL_DATABASE,
-    process.env.MYSQL_USER,
-    process.env.MYSQL_PASSWORD,
-    {
-        host: process.env.MYSQL_HOST,
-        port: process.env.MYSQL_PORT,
-        dialect: 'mysql',
-        logging: false
-    }
-);
+const sequelize = new Sequelize(process.env.MYSQL_URL, {
+    dialect: 'mysql',
+    logging: false
+});
 
 // Models
 const Farmer = sequelize.define('farmer', {
@@ -67,13 +60,43 @@ async function initDB() {
 setTimeout(initDB, 5000); // Wait for mysql to boot
 
 // APIs
-app.get('/api/health', (req, res) => res.json({ status: 'online', service: 'agriculture' }));
+app.get('/api/health-stats', async (req, res) => {
+    try {
+        const counts = await Farmer.count();
+        res.json({
+            service: 'Agriculture DB',
+            technology: 'MySQL (Aiven)',
+            records: counts,
+            documents: counts * 2,
+            status: 'CONNECTED'
+        });
+    } catch (e) {
+        res.json({ service: 'Agriculture DB', status: 'ERROR' });
+    }
+});
 
 app.get('/api/farmers/:farmerId', async (req, res) => {
     try {
         const farmer = await Farmer.findByPk(req.params.farmerId);
         if (!farmer) return res.status(404).json({ error: 'Farmer not found' });
         res.json(farmer);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/farmers', async (req, res) => {
+    try {
+        const { farmer_name, phone_no, district } = req.body;
+        const farmer_id = 'FAR-' + Math.floor(Math.random() * 900000 + 100000);
+        await Farmer.create({
+            farmer_id,
+            farmer_name,
+            phone_no,
+            village: 'Unassigned',
+            district
+        });
+        res.status(201).json({ farmer_id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

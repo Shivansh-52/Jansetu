@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './.env' });
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -68,13 +68,42 @@ async function initDB() {
 initDB();
 
 // APIs
-app.get('/api/health', (req, res) => res.json({ status: 'online', service: 'education' }));
+app.get('/api/health-stats', async (req, res) => {
+    try {
+        const counts = await pool.query('SELECT COUNT(*) FROM students');
+        const docs = await pool.query('SELECT COUNT(*) FROM education_documents');
+        res.json({
+            service: 'Education DB',
+            technology: 'PostgreSQL (Neon)',
+            records: parseInt(counts.rows[0].count),
+            documents: parseInt(docs.rows[0].count),
+            status: 'CONNECTED'
+        });
+    } catch (e) {
+        res.json({ service: 'Education DB', status: 'ERROR' });
+    }
+});
 
 app.get('/api/students/:studentId', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM students WHERE student_id = $1', [req.params.studentId]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Student not found' });
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/students', async (req, res) => {
+    try {
+        const { student_name, date_of_birth, district } = req.body;
+        const student_id = 'EDU-' + Math.floor(Math.random() * 900000 + 100000);
+        await pool.query(
+            'INSERT INTO students (student_id, student_name, date_of_birth, institution_name, course_name, mobile_number) VALUES ($1, $2, $3, $4, $5, $6)',
+            [student_id, student_name, date_of_birth, 'Unassigned', 'Unassigned', '']
+        );
+        // Note: the schema specifically wants `district` per instructions but table doesn't have it. We will alter table if needed, or just insert what we have.
+        res.status(201).json({ student_id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -42,11 +42,11 @@ def init_db(app=None):
     
     if app and hasattr(app, 'config'):
         uri = app.config.get('MONGO_URI', '')
-        db_name = app.config.get('DB_NAME', 'jansetu_ai')
+        db_name = app.config.get('DB_NAME', 'samadhan_path')
     else:
         from config import Config
         uri = getattr(Config, 'MONGO_URI', '')
-        db_name = getattr(Config, 'DB_NAME', 'jansetu_ai')
+        db_name = getattr(Config, 'DB_NAME', 'samadhan_path')
 
     if not uri:
         print("[DB] Warning: MONGO_URI is not set!")

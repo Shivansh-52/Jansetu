@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './.env' });
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -57,13 +57,41 @@ async function initDB() {
 }
 initDB();
 
-app.get('/api/health', (req, res) => res.json({ status: 'online', service: 'public-services' }));
+app.get('/api/health-stats', async (req, res) => {
+    try {
+        const counts = await pool.query('SELECT COUNT(*) FROM applicants');
+        const docs = await pool.query('SELECT COUNT(*) FROM service_applications');
+        res.json({
+            service: 'Public Services DB',
+            technology: 'PostgreSQL (Neon)',
+            records: parseInt(counts.rows[0].count),
+            documents: parseInt(docs.rows[0].count),
+            status: 'CONNECTED'
+        });
+    } catch (e) {
+        res.json({ service: 'Public Services DB', status: 'ERROR' });
+    }
+});
 
 app.get('/api/applicants/:applicantId', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM applicants WHERE applicant_id = $1', [req.params.applicantId]);
         if (result.rows.length === 0) return res.status(404).json({ error: 'Applicant not found' });
         res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/applicants', async (req, res) => {
+    try {
+        const { full_name, mobile } = req.body;
+        const applicant_id = 'PUB-' + Math.floor(Math.random() * 900000 + 100000);
+        await pool.query(
+            'INSERT INTO applicants (applicant_id, applicant_name, mobile, address) VALUES ($1, $2, $3, $4)',
+            [applicant_id, full_name, mobile, 'Unassigned']
+        );
+        res.status(201).json({ applicant_id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

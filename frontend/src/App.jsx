@@ -35,6 +35,10 @@ import SecurityCenter from './pages/SecurityCenter';
 import DataTransformation from './pages/DataTransformation';
 import DataPermissions from './pages/DataPermissions';
 import MyCertificates from './pages/MyCertificates';
+import InteroperabilityDashboard from './pages/InteroperabilityDashboard';
+
+import DatabaseMonitor from './pages/DatabaseMonitor';
+import MyGovernmentData from './pages/MyGovernmentData';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -172,9 +176,13 @@ const App = () => {
                 <Route path="/agriculture/apply" element={<AgricultureApplication />} />
                 <Route path="/tracking/:id" element={<ApplicationTracking />} />
                 <Route path="/interoperability" element={<InteroperabilityMonitor />} />
+                <Route path="/interoperability-demo" element={<InteroperabilityDashboard />} />
                 <Route path="/security" element={<SecurityCenter />} />
                 <Route path="/transformations" element={<DataTransformation />} />
                 <Route path="/permissions" element={<DataPermissions />} />
+                
+                <Route path="/database-monitor" element={<DatabaseMonitor />} />
+                <Route path="/my-government-data" element={<MyGovernmentData />} />
                 
                 {/* Citizen Dashboard & Domains */}
                 <Route

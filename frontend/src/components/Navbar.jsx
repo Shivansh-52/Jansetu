@@ -59,8 +59,8 @@ const Navbar = () => {
     const navLinks = !user ? [
         { label: 'Home', to: '/' },
         { label: 'Gov Services', to: '/services' },
-        { label: 'How It Works', to: '/how-it-works' },
         { label: 'Track App', to: '/track' },
+        { label: 'Official Login', to: '/up2' },
         { label: 'Help', to: '/support' }
     ] : [];
 

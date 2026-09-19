@@ -3,10 +3,18 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix frontend\" \"node gateway/index.js\" \"node education/index.js\" \"node healthcare/index.js\" \"node agriculture/index.js\" \"node infrastructure/index.js\" \"node public-services/index.js\"",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "seed:all": "node scripts/seed_all.js",
+    "validate:data": "node scripts/validate_data.js"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.6.0",
     "concurrently": "^8.0.0",
+    "dotenv": "^18.0.1",
+    "mongoose": "^9.10.1",
+    "mysql2": "^3.24.4",
+    "pg": "^8.23.0",
+    "sqlite3": "^6.0.1",
     "vite": "^7.3.1"
   }
 }
