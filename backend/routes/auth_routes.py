@@ -378,10 +378,26 @@ def login():
 @auth_bp.route('/send-otp', methods=['POST'])
 def send_otp():
     data = request.json
-    mobile = data.get('aadhaar_or_mobile') or data.get('mobile')
-    if not mobile:
+    identifier = data.get('aadhaar_or_mobile') or data.get('mobile')
+    if not identifier:
         return jsonify({'error': 'Mobile required'}), 400
         
+    db = get_db()
+    mobile = identifier
+    
+    # If the user enters Aadhaar or Digilocker ID, find their actual phone number
+    if len(identifier) == 12 and identifier.isdigit() or '.digilocker' in identifier or identifier.startswith('SP-'):
+        user = None
+        for coll in [db.users, db.workers, db.dept_officers, db.contractors, db.admins]:
+            user = coll.find_one({'$or': [{'aadhaar': identifier}, {'master_id': identifier}, {'email': identifier}]})
+            if user:
+                break
+        if user and user.get('phone'):
+            mobile = user.get('phone')
+        else:
+            import os
+            mobile = os.getenv('TWILIO_PHONE_NUMBER', "8081654984") # fallback
+
     # Standardize Mobile Number (+91)
     if not mobile.startswith('+'):
         mobile = f"+91{mobile}"
@@ -400,7 +416,7 @@ def send_otp():
                 to=mobile, channel='sms'
             )
             print(f"[TWILIO] Sent real OTP to {mobile}. Status: {verification.status}")
-            return jsonify({'message': 'Real OTP Sent successfully via Twilio'}), 200
+            return jsonify({'message': 'Real OTP Sent successfully via Twilio', 'mobile': mobile}), 200
         except Exception as e:
             print(f"[TWILIO ERROR] {e}")
             return jsonify({'error': 'Failed to send Real Twilio SMS. Please check your Twilio configuration.'}), 500
@@ -413,14 +429,28 @@ To: {mobile}
 Message: Your Samadhan Path OTP code is 123456. Valid for 5 minutes.
 ==================================================
     """)
-    return jsonify({'message': 'OTP Sent (Simulation)'}), 200
+    return jsonify({'message': 'OTP Sent (Simulation)', 'mobile': mobile}), 200
 
 @auth_bp.route('/verify-otp', methods=['POST'])
 def verify_otp():
     data = request.json
     otp = data.get('otp_code') or data.get('otp')
-    mobile = data.get('aadhaar_or_mobile') or data.get('mobile')
+    identifier = data.get('aadhaar_or_mobile') or data.get('mobile')
     
+    db = get_db()
+    mobile = identifier
+    if identifier and (len(identifier) == 12 and identifier.isdigit() or '.digilocker' in identifier or identifier.startswith('SP-')):
+        user = None
+        for coll in [db.users, db.workers, db.dept_officers, db.contractors, db.admins]:
+            user = coll.find_one({'$or': [{'aadhaar': identifier}, {'master_id': identifier}, {'email': identifier}]})
+            if user:
+                break
+        if user and user.get('phone'):
+            mobile = user.get('phone')
+        else:
+            import os
+            mobile = os.getenv('TWILIO_PHONE_NUMBER', "8081654984")
+            
     import os
     account_sid = os.getenv('TWILIO_ACCOUNT_SID')
     auth_token = os.getenv('TWILIO_AUTH_TOKEN')

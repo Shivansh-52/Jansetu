@@ -295,9 +295,9 @@ const Login = () => {
                                         setOtpLoading(true);
                                         setOtpError('');
                                         try {
-                                            await sendOtp(targetInput);
+                                            const result = await sendOtp(targetInput);
                                             setSsoStep(2);
-                                            setSmsBanner({ mobile: cleanNum });
+                                            setSmsBanner({ mobile: result.mobile || cleanNum });
                                         } catch (err) {
                                             setOtpError(err.response?.data?.error || 'Failed to send Twilio OTP. Please try again.');
                                         } finally {
