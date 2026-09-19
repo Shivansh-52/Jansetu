@@ -381,6 +381,31 @@ def send_otp():
     mobile = data.get('aadhaar_or_mobile') or data.get('mobile')
     if not mobile:
         return jsonify({'error': 'Mobile required'}), 400
+        
+    # Standardize Mobile Number (+91)
+    if not mobile.startswith('+'):
+        mobile = f"+91{mobile}"
+        
+    import os
+    account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+    auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+    verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
+    
+    if account_sid and auth_token and verify_sid:
+        try:
+            from twilio.rest import Client
+            client = Client(account_sid, auth_token)
+            # Send Real Twilio Verify OTP
+            verification = client.verify.v2.services(verify_sid).verifications.create(
+                to=mobile, channel='sms'
+            )
+            print(f"[TWILIO] Sent real OTP to {mobile}. Status: {verification.status}")
+            return jsonify({'message': 'Real OTP Sent successfully via Twilio'}), 200
+        except Exception as e:
+            print(f"[TWILIO ERROR] {e}")
+            return jsonify({'error': 'Failed to send Real Twilio SMS. Please check your Twilio configuration.'}), 500
+
+    # Fallback to simulation
     print(f"""
 ==================================================
 [TWILIO FALLBACK] SMS SIMULATION
@@ -394,8 +419,33 @@ Message: Your Samadhan Path OTP code is 123456. Valid for 5 minutes.
 def verify_otp():
     data = request.json
     otp = data.get('otp_code') or data.get('otp')
-    if otp != '123456':
-        return jsonify({'error': 'Invalid OTP'}), 400
+    mobile = data.get('aadhaar_or_mobile') or data.get('mobile')
+    
+    import os
+    account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+    auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+    verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
+    
+    if account_sid and auth_token and verify_sid and mobile:
+        # Standardize Mobile Number (+91)
+        if not mobile.startswith('+'):
+            mobile = f"+91{mobile}"
+        try:
+            from twilio.rest import Client
+            client = Client(account_sid, auth_token)
+            # Verify Real Twilio OTP
+            verification_check = client.verify.v2.services(verify_sid).verification_checks.create(
+                to=mobile, code=otp
+            )
+            if verification_check.status != 'approved':
+                return jsonify({'error': 'Invalid Real OTP'}), 400
+        except Exception as e:
+            print(f"[TWILIO VERIFY ERROR] {e}")
+            if otp != '123456': # ultimate fallback
+                return jsonify({'error': 'Invalid OTP'}), 400
+    else:
+        if otp != '123456':
+            return jsonify({'error': 'Invalid OTP'}), 400
         
     is_register = data.get('is_register', False)
     if is_register:

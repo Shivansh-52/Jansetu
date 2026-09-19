@@ -166,6 +166,12 @@ const Register = () => {
 
     const finalizeLogin = async () => {
         const loginData = await loginUser(email, password);
+        if (loginData.user?.master_id) {
+            sessionStorage.setItem('masterId', loginData.user.master_id);
+        } else if (registeredUserId) {
+            sessionStorage.setItem('masterId', registeredUserId);
+        }
+        sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
         navigate(getDashboardPath(loginData.user?.role || role));
     };
 
