@@ -4,11 +4,22 @@ import time
 def get_timestamp():
     return datetime.utcnow()
 
+import uuid
+
+def generate_master_id():
+    return f"SP-{str(uuid.uuid4().int)[:8]}"
+
 # 1. USER SCHEMA
-def create_user(name, email, password_hash, role="Citizen", is_active=True):
+def create_user(name, email, password_hash, role="Citizen", is_active=True, master_id=None, mobile="", address="", dob="", district="", state=""):
     return {
+        "master_id": master_id or generate_master_id(),
         "name": name,
         "email": email,
+        "mobile": mobile,
+        "address": address,
+        "dob": dob,
+        "district": district,
+        "state": state,
         "password_hash": password_hash,
         "role": role,
         "karma_points": 100, # Initial welcome karma
@@ -270,3 +281,46 @@ def create_notification(user_id, complaint_id, message, type="system"):
     }
 
 
+# 10. CITIZEN DOCUMENT SCHEMA (VAULT)
+def create_citizen_document(master_id, doc_type, doc_name, doc_number, issuing_dept, issue_date, expiry_date=None, verification_status="Verified", source_system="Revenue Department"):
+    return {
+        "master_id": master_id,
+        "doc_type": doc_type,
+        "doc_name": doc_name,
+        "doc_number": doc_number,
+        "issuing_dept": issuing_dept,
+        "issue_date": issue_date,
+        "expiry_date": expiry_date,
+        "verification_status": verification_status,
+        "source_system": source_system,
+        "last_verified": get_timestamp(),
+        "created_at": get_timestamp()
+    }
+
+# 11. CONSENT LOG SCHEMA
+def create_consent_log(master_id, requesting_dept, purpose, data_requested, status="APPROVED"):
+    return {
+        "master_id": master_id,
+        "requesting_dept": requesting_dept,
+        "purpose": purpose,
+        "data_requested": data_requested,
+        "status": status,
+        "timestamp": get_timestamp()
+    }
+
+# 12. EDUCATION APPLICATION SCHEMA
+def create_education_application(master_id, service_name, tracking_id, required_docs, status="Submitted"):
+    return {
+        "master_id": master_id,
+        "tracking_id": tracking_id,
+        "service_name": service_name,
+        "domain": "Education",
+        "department": "Higher Education",
+        "required_docs": required_docs,
+        "status": status,
+        "timeline": [
+            {"stage": "Application Submitted", "timestamp": get_timestamp(), "status": "Completed"}
+        ],
+        "created_at": get_timestamp(),
+        "last_updated": get_timestamp()
+    }

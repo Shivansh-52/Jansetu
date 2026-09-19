@@ -326,14 +326,25 @@ const RegisterComplaint = () => {
                         textDecoration: 'none', fontSize: 14, fontWeight: 500,
                         color: 'var(--text-secondary)', marginBottom: 24
                     }}>
-                        ← Back to Home
+                        ← Back to Master Dashboard
                     </Link>
-                    <h1 style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginBottom: 8 }}>
-                        Report a Civic Issue
-                    </h1>
-                    <p style={{ maxWidth: 480 }}>
-                        Describe the problem, upload evidence, and we'll route it to the right department using AI.
-                    </p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+                        <div>
+                            <h1 style={{ fontSize: 'clamp(28px, 4vw, 40px)', margin: '0 0 8px 0', color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                🏗️ Infrastructure Domain
+                            </h1>
+                            <p style={{ maxWidth: 480, margin: 0 }}>
+                                Report Civic Issues, Potholes, Utilities. Describe the problem, upload evidence, and we'll route it to the right department using AI.
+                            </p>
+                        </div>
+                        {loggedInUser && (
+                            <div style={{ textAlign: 'right' }}>
+                                <span style={{ fontSize: 12, background: '#f0fdf4', color: '#166534', padding: '4px 8px', borderRadius: 4, border: '1px solid #bbf7d0' }}>
+                                    SSO Identity: {loggedInUser?.master_id || 'SP-MH-000001'}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                     {isGuest && (
                         <div style={{
                             marginTop: 16, padding: '12px 16px', borderRadius: 12,

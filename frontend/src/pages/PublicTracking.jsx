@@ -11,6 +11,13 @@ const PublicTracking = () => {
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!complaintId.trim()) return;
+        
+        // Intercept new Interoperability Unified Tracking IDs
+        if (complaintId.toUpperCase().startsWith('SP-')) {
+            window.location.href = `/tracking/${complaintId.toUpperCase()}`;
+            return;
+        }
+
         setLoading(true); setError(''); setComplaint(null);
         try {
             const data = await getComplaintDetails(complaintId);

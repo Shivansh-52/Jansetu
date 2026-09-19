@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../services/api';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 
 const ROLE_ROUTES = {
     citizen: '/user-dashboard',
@@ -12,14 +13,7 @@ const ROLE_ROUTES = {
     governance: '/governance-dashboard'
 };
 
-const DEMO_LOGINS = [
-    { role: 'contractor', title: 'Contractor', email: 'contractor@jansetu.ai', pass: 'contractor123', icon: '👷‍♂️', color: '#ea580c' },
-    { role: 'governance', title: 'Governance', email: 'gov@jansetu.ai', pass: 'gov123', icon: '🏛️', color: '#4f46e5' },
-    { role: 'dept_officer', title: 'Dept Officer', email: 'officer@jansetu.ai', pass: 'officer123', icon: '📋', color: '#0284c7' },
-    { role: 'admin', title: 'Admin', email: 'admin@jansetu.ai', pass: 'admin123', icon: '🛡️', color: '#059669' },
-    { role: 'worker', title: 'Worker', email: 'worker@jansetu.ai', pass: 'worker123', icon: '🔧', color: '#d97706' },
-    { role: 'citizen', title: 'Citizen', email: 'citizen@jansetu.ai', pass: 'citizen123', icon: '🧑‍💻', color: '#2563eb' }
-];
+
 
 const Login = () => {
     const navigate = useNavigate();
@@ -27,6 +21,11 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    // SSO States
+    const [showSsoModal, setShowSsoModal] = useState(false);
+    const [ssoType, setSsoType] = useState(null); // 'aadhaar' or 'meripehchaan'
+    const [ssoStep, setSsoStep] = useState(1);
 
     useEffect(() => {
         const user = localStorage.getItem('user');
@@ -42,12 +41,24 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            const res = await loginUser(loginEmail, loginPass, 'public');
-            const role = res.user?.role;
-            const targetRoute = ROLE_ROUTES[role] || '/';
-            navigate(targetRoute, { replace: true });
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: loginEmail, password: loginPass })
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                localStorage.setItem('masterId', data.user.master_id);
+                localStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
+                navigate(ROLE_ROUTES[data.user.role] || '/dashboard', { replace: true });
+            } else {
+                setError(data.error || 'Login failed');
+            }
         } catch (err) {
-            setError(err.response?.data?.error || err.response?.data?.message || 'Invalid credentials. Please try again.');
+            setError('Could not connect to the Gateway service. Make sure it is running.');
         } finally {
             setLoading(false);
         }
@@ -58,11 +69,7 @@ const Login = () => {
         await performLogin(email, password);
     };
 
-    const handleQuickLogin = (demo) => {
-        setEmail(demo.email);
-        setPassword(demo.pass);
-        performLogin(demo.email, demo.pass);
-    };
+
 
     return (
         <div className="page-bg" style={{
@@ -87,7 +94,10 @@ const Login = () => {
             >
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                    <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                    <div 
+                        onDoubleClick={() => navigate('/up2')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16, cursor: 'pointer', userSelect: 'none' }}
+                    >
                         <div style={{
                             width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -96,52 +106,49 @@ const Login = () => {
                         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)' }}>
                             Samadhan<span style={{ color: 'var(--accent)' }}>Path</span>
                         </span>
-                    </Link>
+                    </div>
                     <h2 style={{ fontSize: 26, marginBottom: 6 }}>Welcome back</h2>
-                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Sign in or select a 1-click demo role</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Single Sign-On (SSO) for all Government Services</p>
                 </div>
 
-                {/* Quick 1-Click Role Login Bar */}
-                <div style={{
-                    marginBottom: 20, padding: 14, borderRadius: 16,
-                    background: 'white', border: '1px solid var(--border-light)',
-                    boxShadow: 'var(--shadow-card)'
-                }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
-                        <span>⚡ 1-Click Demo Login</span>
-                        <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Zero typing needed</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                        {DEMO_LOGINS.map((demo) => (
-                            <button
-                                key={demo.role}
-                                type="button"
-                                onClick={() => handleQuickLogin(demo)}
-                                style={{
-                                    padding: '8px 6px', borderRadius: 10, border: '1px solid var(--border-light)',
-                                    background: 'var(--bg-secondary)', cursor: 'pointer',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                                    fontSize: 11, fontWeight: 600, color: 'var(--text-primary)',
-                                    transition: 'all 0.15s ease'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = demo.color;
-                                    e.currentTarget.style.background = 'white';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = 'var(--border-light)';
-                                    e.currentTarget.style.background = 'var(--bg-secondary)';
-                                }}
-                            >
-                                <span style={{ fontSize: 16 }}>{demo.icon}</span>
-                                <span>{demo.title}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+
 
                 {/* Card */}
                 <div className="card-js" style={{ padding: 32 }}>
+                    
+                    {/* SSO Buttons */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                        <button 
+                            type="button"
+                            onClick={() => { setSsoType('aadhaar'); setSsoStep(1); setShowSsoModal(true); }}
+                            style={{
+                                width: '100%', padding: '12px 16px', borderRadius: 8, background: '#fff',
+                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
+                            }}
+                        >
+                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 20 }} />
+                            Login with Aadhaar OTP
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={() => { setSsoType('meripehchaan'); setSsoStep(1); setShowSsoModal(true); }}
+                            style={{
+                                width: '100%', padding: '12px 16px', borderRadius: 8, background: '#fff',
+                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
+                            }}
+                        >
+                            <div style={{ width: 24, height: 24, background: '#3b82f6', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold' }}>M</div>
+                            Login with MeriPehchaan
+                        </button>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>OR LOGIN WITH MASTER ID</span>
+                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                    </div>
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -162,15 +169,15 @@ const Login = () => {
                             <label style={{
                                 display: 'block', fontSize: 13, fontWeight: 600,
                                 color: 'var(--text-secondary)', marginBottom: 8
-                            }}>Email Address</label>
+                            }}>Master ID / Mobile / Email</label>
                             <input
-                                type="email"
+                                type="text"
                                 className="input-js"
-                                placeholder="you@example.com"
+                                placeholder="e.g. SP-000001 or you@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                autoComplete="email"
+                                autoComplete="username"
                             />
                         </div>
 
@@ -200,26 +207,60 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div style={{
-                        textAlign: 'center', marginTop: 22, paddingTop: 18,
-                        borderTop: '1px solid var(--border-light)'
-                    }}>
-                        <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-                            Don't have an account?{' '}
-                            <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>
-                                Sign up
-                            </Link>
-                        </p>
+                    <div style={{ textAlign: 'center', marginTop: 24, color: 'var(--text-secondary)' }}>
+                        Don't have a Master ID? <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Create one now</Link>
                     </div>
                 </div>
-
-                {/* Official link */}
-                <div style={{ textAlign: 'center', marginTop: 18 }}>
-                    <Link to="/up2" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}>
-                        Official Portal Access →
-                    </Link>
-                </div>
             </motion.div>
+
+            {/* SSO MODAL */}
+            {showSsoModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                        style={{ background: 'white', borderRadius: 16, width: 400, padding: 32, position: 'relative' }}
+                    >
+                        <button onClick={() => setShowSsoModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>×</button>
+                        
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            {ssoType === 'aadhaar' ? (
+                                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 40, marginBottom: 16 }} />
+                            ) : (
+                                <div style={{ width: 48, height: 48, background: '#3b82f6', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 'bold', margin: '0 auto 16px' }}>M</div>
+                            )}
+                            <h3 style={{ margin: 0, fontSize: 20 }}>
+                                {ssoType === 'aadhaar' ? 'Aadhaar Authentication' : 'MeriPehchaan SSO'}
+                            </h3>
+                        </div>
+
+                        {ssoStep === 1 ? (
+                            <div>
+                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
+                                    {ssoType === 'aadhaar' ? 'Enter your 12-digit Aadhaar number to receive an OTP.' : 'Enter your MeriPehchaan Username.'}
+                                </p>
+                                <input type="text" placeholder={ssoType === 'aadhaar' ? "XXXX XXXX XXXX" : "Username"} className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: ssoType === 'aadhaar' ? 2 : 0 }} />
+                                <button onClick={() => setSsoStep(2)} className="btn-js" style={{ width: '100%', background: '#3b82f6' }}>
+                                    {ssoType === 'aadhaar' ? 'Send OTP' : 'Continue'}
+                                </button>
+                            </div>
+                        ) : ssoStep === 2 ? (
+                            <div>
+                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
+                                    Enter the 6-digit OTP sent to your registered mobile number.
+                                </p>
+                                <input type="text" placeholder="● ● ● ● ● ●" className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: 8, fontSize: 20 }} />
+                                <button onClick={() => {
+                                    setShowSsoModal(false);
+                                    // Use demo user for simulated login
+                                    performLogin('sp-12963072@jansetu.gov.in', 'Password@123');
+                                }} className="btn-js" style={{ width: '100%', background: '#10b981' }}>
+                                    Verify & Secure Login
+                                </button>
+                            </div>
+                        )}
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

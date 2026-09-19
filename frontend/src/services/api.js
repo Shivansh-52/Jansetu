@@ -343,4 +343,51 @@ export const getGamificationLeaderboard = async () => {
     return response.data;
 };
 
+// ============ ⭐ 6. EDUCATION INTEROPERABILITY DOMAIN ============
+export const getEducationDocuments = async (masterId) => {
+    const response = await api.get(`/education/documents?master_id=${masterId}`);
+    return response.data;
+};
 
+export const grantEducationConsent = async (masterId, purpose, requestingDept) => {
+    const response = await api.post('/education/consent', {
+        master_id: masterId,
+        purpose,
+        requesting_dept: requestingDept
+    });
+    return response.data;
+};
+
+export const getConsentHistory = async (masterId) => {
+    const response = await api.get(`/education/consent/history?master_id=${masterId}`);
+    return response.data;
+};
+
+export const applyEducationService = async (masterId, service) => {
+    const response = await api.post('/education/apply', {
+        master_id: masterId,
+        service
+    });
+    return response.data;
+};
+
+// ============ ⭐ 7. GOVERNMENT CERTIFICATES MODULE ============
+export const getGovCertificates = async (citizenId) => {
+    const response = await api.get(`/gov/certificates/${citizenId}`);
+    return response.data;
+};
+
+export const requestCertificateCorrection = async (payload) => {
+    const response = await api.post('/gov/certificates/correction', payload);
+    return response.data;
+};
+
+export const shareCertificateData = async (payload) => {
+    const response = await api.post('/gov/certificates/consent', payload);
+    return response.data;
+};
+
+export const getCertificateAuditLogs = async (citizenId) => {
+    const response = await api.get(`/gov/certificates/audit/${citizenId}`);
+    return response.data;
+};

@@ -7,12 +7,12 @@
 /* --- Design Tokens --- */
 :root {
     /* Colors */
-    --bg-primary: #F6F8FC;
-    --bg-secondary: #EAF2FF;
-    --accent: #2B6BFF;
-    --accent-hover: #1a5ae0;
-    --text-primary: #0E1A33;
-    --text-secondary: #4A5B7A;
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
     --surface: #ffffff;
     --border-light: rgba(14, 26, 51, 0.06);
     --shadow-card: 0 18px 50px rgba(14, 26, 51, 0.08);

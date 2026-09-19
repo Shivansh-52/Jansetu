@@ -1,5 +1,12 @@
 {
+  "name": "samadhanpath-microservices",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix frontend\" \"node gateway/index.js\" \"node education/index.js\" \"node healthcare/index.js\" \"node agriculture/index.js\" \"node infrastructure/index.js\" \"node public-services/index.js\"",
+    "start": "npm run dev"
+  },
   "dependencies": {
+    "concurrently": "^8.0.0",
     "vite": "^7.3.1"
   }
 }

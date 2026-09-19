@@ -59,10 +59,16 @@ from routes.governance_routes import governance_bp
 app.register_blueprint(governance_bp, url_prefix='/api/governance')
 from routes.contractor_routes import contractor_bp
 app.register_blueprint(contractor_bp, url_prefix='/api/contractor')
+from routes.certificate_routes import certificate_bp
+app.register_blueprint(certificate_bp, url_prefix='/api/gov/certificates')
 from routes.asset_routes import asset_bp
 app.register_blueprint(asset_bp, url_prefix='/api/asset')
 from routes.notification_routes import notification_bp
 app.register_blueprint(notification_bp, url_prefix='/api/notifications')
+from routes.service_routes import service_bp
+app.register_blueprint(service_bp, url_prefix='/api/services')
+from routes.education_routes import education_bp
+app.register_blueprint(education_bp, url_prefix='/api/education')
 
 # Health check endpoint for Uptime Robot
 @app.route('/api/health')

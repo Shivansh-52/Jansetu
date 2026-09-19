@@ -58,13 +58,11 @@ const Navbar = () => {
     // Public navigation links are only shown when no user is logged in.
     const navLinks = !user ? [
         { label: 'Home', to: '/' },
-        { label: 'Asset Passport', to: '/asset-passport' },
-        { label: 'Services', to: '/services' },
-        { label: 'About', to: '/about' },
-        { label: 'Track', to: '/track' },
-    ] : [
-        { label: 'Asset Passport', to: '/asset-passport' },
-    ];
+        { label: 'Gov Services', to: '/services' },
+        { label: 'How It Works', to: '/how-it-works' },
+        { label: 'Track App', to: '/track' },
+        { label: 'Help', to: '/support' }
+    ] : [];
 
 
     return (
@@ -85,14 +83,14 @@ const Navbar = () => {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'white', fontFamily: 'var(--font-heading)',
                                 fontWeight: 700, fontSize: 16
-                            }}>JS</div>
+                            }}>SP</div>
                             <span style={{
                                 fontFamily: 'var(--font-heading)',
                                 fontWeight: 600, fontSize: 20,
                                 color: 'var(--text-primary)',
                                 letterSpacing: '-0.02em'
                             }}>
-                                SamadhanPath<span style={{ color: 'var(--accent)' }}>AI</span>
+                                Samadhan<span style={{ color: 'var(--accent)' }}>Path</span>
                             </span>
                         </Link>
 
@@ -123,13 +121,21 @@ const Navbar = () => {
                                     }}>
                                         Dashboard
                                     </Link>
-                                    {/* Only citizens see direct Submit Complaint shortcut */}
+                                    {/* Only citizens see direct shortcut */}
                                     {user.role === 'citizen' && (
-                                        <Link to="/register-complaint" className="btn-primary" style={{
-                                            padding: '10px 24px', fontSize: 13, textDecoration: 'none'
-                                        }}>
-                                            Submit Complaint
-                                        </Link>
+                                        <>
+                                            <Link to="/certificates" style={{
+                                                textDecoration: 'none', fontSize: 14, fontWeight: 500, color: location.pathname === '/certificates' ? 'var(--accent)' : 'var(--text-secondary)',
+                                                marginRight: '16px'
+                                            }}>
+                                                📄 My Certificates
+                                            </Link>
+                                            <Link to="/services" className="btn-primary" style={{
+                                                padding: '10px 24px', fontSize: 13, textDecoration: 'none'
+                                            }}>
+                                                Explore Services
+                                            </Link>
+                                        </>
                                     )}
                                     <button onClick={handleLogout} style={{
                                         background: 'none', border: '1.5px solid var(--border-light)',
@@ -149,10 +155,10 @@ const Navbar = () => {
                                     }}>
                                         Login
                                     </Link>
-                                    <Link to="/register-complaint" className="btn-primary" style={{
-                                        padding: '10px 24px', fontSize: 13
+                                    <Link to="/register" className="btn-primary" style={{
+                                        padding: '10px 24px', fontSize: 13, textDecoration: 'none'
                                     }}>
-                                        Submit Complaint
+                                        Create Master ID
                                     </Link>
                                 </>
                             )}
@@ -238,10 +244,16 @@ const Navbar = () => {
                                 </Link>
                                 {/* Show "Submit Complaint" button only for citizens */}
                                 {user.role === 'citizen' && (
-                                    <Link to="/register-complaint" onClick={() => setMenuOpen(false)}
-                                        className="btn-primary" style={{ textAlign: 'center', width: '100%' }}>
-                                        Submit Complaint
-                                    </Link>
+                                    <>
+                                        <Link to="/certificates" onClick={() => setMenuOpen(false)}
+                                            style={{ textDecoration: 'none', color: location.pathname === '/certificates' ? 'var(--accent)' : 'var(--text-primary)', fontSize: 20, fontWeight: 600, padding: '14px 0', borderBottom: '1px solid var(--border-light)' }}>
+                                            📄 My Certificates
+                                        </Link>
+                                        <Link to="/services" onClick={() => setMenuOpen(false)}
+                                            className="btn-primary" style={{ textAlign: 'center', width: '100%', textDecoration: 'none', marginTop: 12 }}>
+                                            Explore Services
+                                        </Link>
+                                    </>
                                 )}
                                 <button onClick={() => { handleLogout(); setMenuOpen(false); }}
                                     className="btn-secondary" style={{ width: '100%' }}>
@@ -254,9 +266,9 @@ const Navbar = () => {
                                     className="btn-secondary" style={{ textAlign: 'center', width: '100%' }}>
                                     Login
                                 </Link>
-                                <Link to="/register-complaint" onClick={() => setMenuOpen(false)}
-                                    className="btn-primary" style={{ textAlign: 'center', width: '100%' }}>
-                                    Submit Complaint
+                                <Link to="/register" onClick={() => setMenuOpen(false)}
+                                    className="btn-primary" style={{ textAlign: 'center', width: '100%', textDecoration: 'none' }}>
+                                    Create Master ID
                                 </Link>
                             </>
                         )}

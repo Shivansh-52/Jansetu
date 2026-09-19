@@ -9,10 +9,39 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('Citizen');
     const [department, setDepartment] = useState('');
+    const [mobile, setMobile] = useState('');
+    const [address, setAddress] = useState('');
+    const [dob, setDob] = useState('');
+    const [district, setDistrict] = useState('');
+    const [state, setState] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [showDigilockerModal, setShowDigilockerModal] = useState(false);
+    const [digilockerStep, setDigilockerStep] = useState(1);
     const navigate = useNavigate();
+
+    const containsPersonalInfo = (p) => {
+        if (!p) return false;
+        const pLower = p.toLowerCase();
+        
+        // Check name
+        if (name) {
+            const nameParts = name.toLowerCase().split(' ').filter(n => n.length > 2);
+            for (let part of nameParts) {
+                if (pLower.includes(part)) return true;
+            }
+        }
+        
+        // Check DOB
+        if (dob) {
+            const dobClean = dob.replace(/-/g, ''); // YYYYMMDD
+            const dobRev = dob.split('-').reverse().join(''); // DDMMYYYY
+            const year = dob.split('-')[0]; // YYYY
+            if (pLower.includes(dobClean) || pLower.includes(dobRev) || pLower.includes(year)) return true;
+        }
+        return false;
+    };
 
     // Password format validation
     const passwordChecks = [
@@ -21,6 +50,7 @@ const Register = () => {
         { label: 'Lowercase letter', test: (p) => /[a-z]/.test(p) },
         { label: 'A digit (0-9)', test: (p) => /[0-9]/.test(p) },
         { label: 'Special character (!@#$%)', test: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p) },
+        { label: 'No personal info (Name/DOB)', test: (p) => !containsPersonalInfo(p) },
     ];
     const isPasswordValid = passwordChecks.every(c => c.test(password));
 
@@ -44,7 +74,7 @@ const Register = () => {
         setIsLoading(true);
         setError('');
         try {
-            await registerUser({ name, email, password, role, department });
+            await registerUser({ name, email, password, role, department, mobile, address, dob, district, state });
             // Auto-login after successful registration
             const loginData = await loginUser(email, password);
             navigate(getDashboardPath(loginData.user?.role || role));
@@ -71,22 +101,46 @@ const Register = () => {
             >
                 {/* Header */}
                 <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <Link to="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                    <div 
+                        onDoubleClick={() => navigate('/up2')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 24, cursor: 'pointer', userSelect: 'none' }}
+                    >
                         <div style={{
                             width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'white', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16
-                        }}>JS</div>
+                        }}>SP</div>
                         <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)' }}>
-                            SamadhanPath<span style={{ color: 'var(--accent)' }}>AI</span>
+                            Samadhan<span style={{ color: 'var(--accent)' }}>Path</span>
                         </span>
-                    </Link>
-                    <h2 style={{ fontSize: 28, marginBottom: 8 }}>Create your account</h2>
-                    <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Join a smarter path to civic resolution</p>
+                    </div>
+                    <h2 style={{ fontSize: 28, marginBottom: 8 }}>Create your Master ID</h2>
+                    <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>One digital identity for all government services</p>
                 </div>
 
                 {/* Card */}
                 <div className="card-js" style={{ padding: 32 }}>
+                    
+                    <button 
+                        type="button"
+                        onClick={() => setShowDigilockerModal(true)}
+                        style={{
+                            width: '100%', padding: '12px 16px', borderRadius: 8, background: '#f8fafc',
+                            border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 15,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                            cursor: 'pointer', marginBottom: 24, transition: 'all 0.2s'
+                        }}
+                    >
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 24, objectFit: 'contain' }} />
+                        Register instantly with DigiLocker
+                    </button>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>OR CREATE MANUALLY</span>
+                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                    </div>
+
                     {error && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -102,32 +156,7 @@ const Register = () => {
                     )}
 
                     <form onSubmit={handleRegister}>
-                        {/* Role Selector */}
-                        <div style={{ marginBottom: 20 }}>
-                            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>
-                                I am registering as
-                            </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                {['Citizen', 'Worker', 'dept_officer'].map(r => (
-                                    <button
-                                        key={r}
-                                        type="button"
-                                        onClick={() => setRole(r)}
-                                        style={{
-                                            padding: '12px 16px', borderRadius: 16,
-                                            border: role === r ? '2px solid var(--accent)' : '2px solid var(--border-light)',
-                                            background: role === r ? 'var(--bg-secondary)' : 'var(--surface)',
-                                            color: role === r ? 'var(--accent)' : 'var(--text-secondary)',
-                                            fontWeight: 600, fontSize: 14, cursor: 'pointer',
-                                            fontFamily: 'var(--font-body)',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        {r === 'Citizen' ? '👤' : '👷'} {r}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+
 
                         <div style={{ marginBottom: 16 }}>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Full Name</label>
@@ -138,6 +167,36 @@ const Register = () => {
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Email Address</label>
                             <input type="email" className="input-js" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
                         </div>
+
+                        {role === 'Citizen' && (
+                            <div style={{ marginBottom: 16, padding: 16, background: 'var(--bg-secondary)', borderRadius: 12, border: '1px solid var(--border-light)' }}>
+                                <h4 style={{ margin: '0 0 12px 0', fontSize: 14 }}>Master Profile Details (Auto-fills Government Forms)</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Mobile Number</label>
+                                        <input type="tel" className="input-js" placeholder="10-digit number" value={mobile} onChange={e => setMobile(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Date of Birth</label>
+                                        <input type="date" className="input-js" value={dob} onChange={e => setDob(e.target.value)} />
+                                    </div>
+                                </div>
+                                <div style={{ marginBottom: 12 }}>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>Address</label>
+                                    <input type="text" className="input-js" placeholder="Full residential address" value={address} onChange={e => setAddress(e.target.value)} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>District</label>
+                                        <input type="text" className="input-js" value={district} onChange={e => setDistrict(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 4 }}>State</label>
+                                        <input type="text" className="input-js" value={state} onChange={e => setState(e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div style={{ marginBottom: 8, position: 'relative' }}>
                             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Password</label>
@@ -187,32 +246,63 @@ const Register = () => {
                             </div>
                         )}
 
-                        {(role === 'Worker' || role === 'dept_officer') && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} style={{ marginBottom: 20 }}>
-                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Department</label>
-                                <select className="input-js" value={department} onChange={e => setDepartment(e.target.value)}>
-                                    <option value="">Select Department</option>
-                                    <option value="Water">Water Supply</option>
-                                    <option value="Road">Roads & Transport</option>
-                                    <option value="Electricity">Electricity</option>
-                                    <option value="Sanitation">Sanitation</option>
-                                </select>
-                            </motion.div>
-                        )}
+
 
                         <button type="submit" className="btn-primary" disabled={isLoading} style={{ width: '100%', opacity: isLoading ? 0.7 : 1 }}>
-                            {isLoading ? 'Creating Account...' : 'Create Account'}
+                            {isLoading ? 'Creating Master ID...' : 'Create Master ID'}
                         </button>
                     </form>
 
-                    <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-light)' }}>
-                        <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
-                            Already have an account?{' '}
-                            <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
-                        </p>
+                    {/* Footer */}
+                    <div style={{ textAlign: 'center', marginTop: 24, color: 'var(--text-secondary)' }}>
+                        Already have a Master ID? <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Sign In here</Link>
                     </div>
                 </div>
             </motion.div>
+
+            {/* DIGILOCKER MODAL */}
+            {showDigilockerModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                        style={{ background: 'white', borderRadius: 16, width: 400, padding: 32, position: 'relative' }}
+                    >
+                        <button onClick={() => setShowDigilockerModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>×</button>
+                        
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 40, marginBottom: 16 }} />
+                            <h3 style={{ margin: 0, fontSize: 20 }}>DigiLocker Authentication</h3>
+                        </div>
+
+                        {digilockerStep === 1 ? (
+                            <div>
+                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
+                                    Enter your Aadhaar or Mobile Number linked with DigiLocker.
+                                </p>
+                                <input type="text" placeholder="Aadhaar / Mobile Number" className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: 2 }} />
+                                <button onClick={() => setDigilockerStep(2)} className="btn-js" style={{ width: '100%', background: '#3b82f6' }}>Send OTP</button>
+                            </div>
+                        ) : digilockerStep === 2 ? (
+                            <div>
+                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
+                                    Enter the 6-digit OTP sent to your registered mobile number.
+                                </p>
+                                <input type="text" placeholder="● ● ● ● ● ●" className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: 8, fontSize: 20 }} />
+                                <button onClick={() => {
+                                    setDigilockerStep(1);
+                                    setShowDigilockerModal(false);
+                                    setName('Ravi Kumar (Verified)');
+                                    setDob('1990-05-15');
+                                    setMobile('9876543210');
+                                    setAddress('Sector 12, Vikas Nagar');
+                                    setDistrict('Lucknow');
+                                    setState('Uttar Pradesh');
+                                }} className="btn-js" style={{ width: '100%', background: '#10b981' }}>Verify & Fetch Details</button>
+                            </div>
+                        )}
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 };

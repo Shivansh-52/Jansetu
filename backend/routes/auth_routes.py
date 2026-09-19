@@ -5,6 +5,7 @@ import jwt
 import datetime
 from config import Config
 import bcrypt
+import re
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -34,7 +35,23 @@ def register():
         return jsonify({'error': 'Password must contain at least one digit.'}), 400
     if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
         return jsonify({'error': 'Password must contain at least one special character (!@#$%^&*).'}), 400
-    
+        
+    p_lower = password.lower()
+    user_name = data.get('name', '').lower()
+    if user_name:
+        parts = [p for p in user_name.split() if len(p) > 2]
+        for part in parts:
+            if part in p_lower:
+                return jsonify({'error': 'Password must not contain your name.'}), 400
+                
+    user_dob = data.get('dob', '')
+    if user_dob:
+        dob_clean = user_dob.replace('-', '')
+        dob_rev = ''.join(user_dob.split('-')[::-1])
+        year = user_dob.split('-')[0]
+        if dob_clean in p_lower or dob_rev in p_lower or year in p_lower:
+            return jsonify({'error': 'Password must not contain your date of birth.'}), 400
+
     print(f"[AUTH REGISTER] Attempting to register {email} as {role}")
 
     # Check if user exists in either collection
@@ -100,7 +117,12 @@ def register():
             name=data.get('name', 'Citizen'),
             email=email,
             password_hash=password_hash,
-            role='Citizen'
+            role='Citizen',
+            mobile=data.get('mobile', ''),
+            address=data.get('address', ''),
+            dob=data.get('dob', ''),
+            district=data.get('district', ''),
+            state=data.get('state', '')
         )
         result = db.users.insert_one(new_user)
         user_id = str(result.inserted_id)
@@ -140,15 +162,15 @@ def login():
         print(f"Headers: {dict(request.headers)}")
         print(f"Raw Payload: {data}")
 
-        email = (data.get('email') or '').strip().lower()
+        email_or_id = (data.get('email') or '').strip().lower()
         password = data.get('password') or ''
         context = data.get('context', 'public')
 
-        if not email or not password:
+        if not email_or_id or not password:
             print("Error: Missing credentials in payload")
-            return jsonify({'error': 'Please provide both email and password.'}), 400
+            return jsonify({'error': 'Please provide both Master ID/Email and password.'}), 400
 
-        print(f"Attempting login for: {email}")
+        print(f"Attempting login for: {email_or_id}")
 
         # ===== 1. Universal Instant Demo Accounts (100% Guaranteed Hackathon / Offline Safe) =====
         demo_accounts = {
@@ -200,12 +222,23 @@ def login():
                 'role': 'citizen',
                 'department': 'Civic Citizen',
                 'district': 'Lucknow',
+                'master_id': 'SP-MH-000001',
                 'passwords': ['citizen123', 'Pass@123', 'Citizen@123', 'admin123', '123456']
+            },
+            'aarav@jansetu.ai': {
+                'id': 'cit_aarav_001',
+                'name': 'Aarav Sharma',
+                'role': 'citizen',
+                'department': 'Civic Citizen',
+                'district': 'Varanasi',
+                'master_id': 'SP-12963072',
+                'passwords': ['Demo@123', 'admin123', '123456']
             }
         }
 
-        if email in demo_accounts:
-            demo_user = demo_accounts[email]
+        if email_or_id in demo_accounts or email_or_id == 'sp-mh-000001' or email_or_id == 'sp-12963072':
+            demo_email = 'citizen@jansetu.ai' if email_or_id == 'sp-mh-000001' else ('aarav@jansetu.ai' if email_or_id == 'sp-12963072' else email_or_id)
+            demo_user = demo_accounts[demo_email]
             if password in demo_user['passwords'] or password in ['admin123', 'Pass@123', '123456']:
                 user_id = demo_user['id']
                 target_role = demo_user['role']
@@ -223,12 +256,13 @@ def login():
                         'id': user_id,
                         '_id': user_id,
                         'name': demo_user['name'],
-                        'email': email,
+                        'email': demo_email,
                         'role': target_role,
                         'department': demo_user.get('department', 'General'),
                         'contractor_id': demo_user.get('contractor_id'),
                         'company_name': demo_user.get('company_name'),
-                        'district': demo_user.get('district', 'Lucknow')
+                        'district': demo_user.get('district', 'Lucknow'),
+                        'master_id': demo_user.get('master_id')
                     }
                 }), 200
 
@@ -238,32 +272,35 @@ def login():
         try:
             db = get_db()
             if db is not None:
-                # 1. Check Users (Citizens)
-                user = db.users.find_one({'email': {'$regex': f'^{re.escape(email)}$', '$options': 'i'}})
+                # 1. Check Users (Citizens) by email or master_id
+                pattern = re.compile(f'^{re.escape(email_or_id)}$', re.IGNORECASE)
+                user = db.users.find_one({'email': pattern})
+                if not user:
+                    user = db.users.find_one({'master_id': pattern})
                 if user:
                     role = user.get('role', 'citizen').lower()
 
                 # 2. Check Workers
                 if not user:
-                    user = db.workers.find_one({'email': {'$regex': f'^{re.escape(email)}$', '$options': 'i'}})
+                    user = db.workers.find_one({'email': pattern})
                     if user:
                         role = 'worker'
 
                 # 3. Check Dept Officers
                 if not user:
-                    user = db.dept_officers.find_one({'email': {'$regex': f'^{re.escape(email)}$', '$options': 'i'}})
+                    user = db.dept_officers.find_one({'email': pattern})
                     if user:
                         role = 'dept_officer'
 
                 # 4. Check Contractors
                 if not user:
-                    user = db.contractors.find_one({'email': {'$regex': f'^{re.escape(email)}$', '$options': 'i'}})
+                    user = db.contractors.find_one({'email': pattern})
                     if user:
                         role = 'contractor'
 
                 # 5. Check Admins & Governance
                 if not user:
-                    user = db.admins.find_one({'email': {'$regex': f'^{re.escape(email)}$', '$options': 'i'}})
+                    user = db.admins.find_one({'email': pattern})
                     if user:
                         role = user.get('role', 'admin').lower()
         except Exception as db_err:
@@ -284,7 +321,7 @@ def login():
                 pwd_match = True
 
             if pwd_match:
-                print(f"Success: Password match for {email} ({role})")
+                print(f"Success: Password match for {email_or_id} ({role})")
                 user_id = str(user['_id'])
 
                 token = jwt.encode({
@@ -296,7 +333,7 @@ def login():
                 try:
                     if db is not None:
                         db.complaints.update_many(
-                            {'email': user.get('email', email), 'user_id': 'Anonymous'},
+                            {'email': user.get('email', email_or_id), 'user_id': 'Anonymous'},
                             {'$set': {'user_id': user_id}}
                         )
                 except Exception:
@@ -309,18 +346,19 @@ def login():
                         'id': user_id,
                         '_id': user_id,
                         'name': user.get('name', 'User'),
-                        'email': user.get('email', email),
+                        'email': user.get('email', email_or_id),
                         'role': role,
                         'department': user.get('department_id') or user.get('department', 'General'),
                         'contractor_id': user.get('contractor_id'),
                         'company_name': user.get('company_name'),
-                        'district': user.get('district', '')
+                        'district': user.get('district', ''),
+                        'master_id': user.get('master_id')
                     }
                 }), 200
             else:
                 return jsonify({'error': 'Invalid password. Please try again.'}), 401
         else:
-            return jsonify({'error': f'Account not found for "{email}". Use demo credentials or register.'}), 401
+            return jsonify({'error': f'Account not found for "{email_or_id}". Use demo credentials or register.'}), 401
 
     except Exception as e:
         print(f"CRITICAL ERROR in Login: {e}")
