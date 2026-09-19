@@ -434,7 +434,7 @@ def verify_otp():
         'user_id': str(user['_id']),
         'role': user.get('role', 'citizen'),
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    }, Config.JWT_SECRET, algorithm='HS256')
+    }, Config.SECRET_KEY, algorithm='HS256')
     
     user['_id'] = str(user['_id'])
     # Remove sensitive info
