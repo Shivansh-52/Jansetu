@@ -23,7 +23,7 @@ const MyCertificates = () => {
     const [citizenId, setCitizenId] = useState('');
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         if (userStr) {
             const user = JSON.parse(userStr);
             setCitizenId(user.master_id || 'SP-12963072');

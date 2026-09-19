@@ -42,7 +42,7 @@ import MyGovernmentData from './pages/MyGovernmentData';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
 
     if (!userStr) {
         return <Navigate to="/login" replace />;
@@ -54,8 +54,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return <Navigate to="/" replace />;
         }
     } catch (e) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
         return <Navigate to="/login" replace />;
     }
 
@@ -64,7 +64,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 // Citizen or Guest Route
 const CitizenOrGuestRoute = ({ children }) => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (!userStr) return children;
 
     try {
@@ -81,7 +81,7 @@ const CitizenOrGuestRoute = ({ children }) => {
 
 // Redirects authenticated users away from public pages to their dashboard
 const RedirectIfAuthenticated = ({ children }) => {
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     if (!userStr) return children;
 
     try {

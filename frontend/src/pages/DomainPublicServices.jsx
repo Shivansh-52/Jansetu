@@ -6,7 +6,7 @@ const DomainPublicServices = () => {
     const [applicationStatus, setApplicationStatus] = useState(null);
     
     const getUser = () => {
-        try { const s = localStorage.getItem('user'); return s ? JSON.parse(s) : null; }
+        try { const s = sessionStorage.getItem('user'); return s ? JSON.parse(s) : null; }
         catch { return null; }
     };
     const user = getUser();

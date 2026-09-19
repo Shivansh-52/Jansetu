@@ -10,12 +10,13 @@ def generate_master_id():
     return f"SP-{str(uuid.uuid4().int)[:8]}"
 
 # 1. USER SCHEMA
-def create_user(name, email, password_hash, role="Citizen", is_active=True, master_id=None, mobile="", address="", dob="", district="", state=""):
+def create_user(name, email, password_hash, role="Citizen", is_active=True, master_id=None, mobile="", address="", dob="", district="", state="", aadhaar_number=""):
     return {
         "master_id": master_id or generate_master_id(),
         "name": name,
         "email": email,
         "mobile": mobile,
+        "aadhaar_number": aadhaar_number,
         "address": address,
         "dob": dob,
         "district": district,

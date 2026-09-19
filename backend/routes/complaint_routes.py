@@ -102,6 +102,56 @@ def submit_complaint():
         print(f"Error submitting complaint: {e}")
         return jsonify({'error': str(e)}), 500
 
+@complaint_bp.route('/data-correction', methods=['POST'])
+def submit_data_correction():
+    auth_result = verify_user_role()
+    if auth_result is None:
+        return jsonify({'error': 'Only logged in citizens can raise data correction requests.'}), 403
+    
+    user_id, role = auth_result
+    data = request.json
+    
+    if not data or not data.get('doc_number') or not data.get('reason'):
+        return jsonify({'error': 'Missing doc_number or reason'}), 400
+        
+    db = get_db()
+    import datetime, random
+    
+    ref_id = f"DC-{datetime.datetime.utcnow().year}-{random.randint(10000, 99999)}"
+    
+    # We create a structured complaint of type 'Data Correction'
+    correction_ticket = {
+        "user_id": user_id,
+        "ref_id": ref_id,
+        "category": "Data Correction",
+        "priority": "Medium",
+        "department": data.get('department', 'General Administration'),
+        "complaint_text": f"Document Update Request for {data.get('doc_name', 'Document')} (No. {data.get('doc_number', 'N/A')})\nReason: {data.get('reason')}",
+        "document_info": {
+            "doc_number": data.get('doc_number'),
+            "doc_name": data.get('doc_name')
+        },
+        "status": "Pending",
+        "dual_routing": {
+            "head_department": f"{data.get('department', 'General Administration')} Records Directorate",
+            "local_status": "Assigned",
+            "head_status": "Monitoring"
+        },
+        "timeline": {
+            "submitted": datetime.datetime.utcnow()
+        },
+        "created_at": datetime.datetime.utcnow(),
+        "last_updated": datetime.datetime.utcnow()
+    }
+    
+    result = db.complaints.insert_one(correction_ticket)
+    
+    return jsonify({
+        "message": "Data correction request submitted successfully. The department has been notified.",
+        "ref_id": ref_id,
+        "ticket_id": str(result.inserted_id)
+    }), 201
+
 @complaint_bp.route('/user/<uid>', methods=['GET'])
 def get_user_complaints(uid):
     db = get_db()

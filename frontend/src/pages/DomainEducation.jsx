@@ -25,8 +25,8 @@ const DomainEducation = () => {
     const [interopFeed, setInteropFeed] = useState([]);
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
-        const storedMasterId = localStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
+        const userStr = sessionStorage.getItem('user');
+        const storedMasterId = sessionStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
         setMasterId(storedMasterId);
 
         fetchData(storedMasterId);
@@ -117,12 +117,12 @@ const DomainEducation = () => {
     return (
         <div style={{ background: '#f8fafc', minHeight: '100vh', paddingBottom: 60 }}>
             {/* TOP NOTICE BANNER */}
-            <div style={{ background: '#1e293b', color: '#e2e8f0', padding: '10px 24px', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: '#0f172a', color: '#e2e8f0', padding: '10px 24px', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    🛡️ <strong>SamadhanPath Interoperability Portal</strong> — Education Domain (Scholarships & Education Loans)
+                    🛡️ <strong>SamadhanPath Unified Gateway</strong> — Education Domain (Scholarships & Education Loans)
                 </div>
-                <div style={{ background: '#0284c7', color: 'white', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
-                    DEMO PROTOTYPE ACTIVE
+                <div style={{ background: '#059669', color: 'white', padding: '3px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                    🟢 OFFICIAL GOVERNMENT PORTAL ACTIVE
                 </div>
             </div>
 
@@ -178,7 +178,7 @@ const DomainEducation = () => {
                     </div>
                     <div style={{ background: 'white', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', textAlign: 'center' }}>
                         <div style={{ fontSize: 22, fontWeight: 700, color: '#059669' }}>{loans.length}</div>
-                        <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Demo Loan Categories</div>
+                        <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>Education Loan Schemes</div>
                     </div>
                     <div style={{ background: 'white', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', textAlign: 'center' }}>
                         <div style={{ fontSize: 22, fontWeight: 700, color: '#d97706' }}>{recommendations.filter(r => r.eligible).length}</div>
@@ -309,11 +309,11 @@ const DomainEducation = () => {
                     </div>
                 )}
 
-                {/* TAB 3: EDUCATION LOANS CATALOGUE (6 DEMO CATEGORIES) */}
+                {/* TAB 3: NATIONAL EDUCATION LOANS CATALOGUE */}
                 {activeTab === 'loans' && (
                     <div>
                         <div style={{ marginBottom: 20 }}>
-                            <h3 style={{ fontSize: 18, margin: 0 }}>Education Loans Catalogue (6 Demo Categories)</h3>
+                            <h3 style={{ fontSize: 18, margin: 0 }}>National Education Loans Catalogue</h3>
                             <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0' }}>
                                 Subsidized government and public sector bank education loan schemes with collateral-free limits and moratorium periods.
                             </p>

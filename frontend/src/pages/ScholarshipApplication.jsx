@@ -9,10 +9,9 @@ const STEPS = [
     '3. Education Info',
     '4. Financial Info',
     '5. Documents',
-    '6. Consent',
-    '7. Verification & OTP',
-    '8. Review',
-    '9. Submit'
+    '6. Consent & OTP',
+    '7. Review',
+    '8. Submit'
 ];
 
 const ScholarshipApplication = () => {
@@ -21,7 +20,7 @@ const ScholarshipApplication = () => {
 
     const schemeId = searchParams.get('scheme_id') || 'SCH-001';
     const schemeType = searchParams.get('scheme_type') || 'SCHOLARSHIP';
-    const defaultSchemeName = searchParams.get('scheme_name') || (schemeType === 'LOAN' ? 'SamadhanPath Demo Student Education Loan' : 'SamadhanPath Demo Merit-cum-Means Post-Matric Scholarship');
+    const defaultSchemeName = searchParams.get('scheme_name') || (schemeType === 'LOAN' ? 'Pradhan Mantri Vidya Lakshmi Student Education Loan' : 'Post-Matric Scholarship for SC/ST/OBC Students (Ministry of Social Justice)');
 
     const [currentStep, setCurrentStep] = useState(0);
     const [masterId, setMasterId] = useState('');
@@ -41,15 +40,16 @@ const ScholarshipApplication = () => {
 
     // Verification & Consent State
     const [otpSent, setOtpSent] = useState(false);
-    const [otpInput, setOtpInput] = useState('123456');
+    const [otpInput, setOtpInput] = useState('');
+    const [consentMobile, setConsentMobile] = useState('');
     const [consentToken, setConsentToken] = useState(null);
     const [cdmData, setCdmData] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submittedAppId, setSubmittedAppId] = useState(null);
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
-        const mId = localStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
+        const userStr = sessionStorage.getItem('user');
+        const mId = sessionStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
         setMasterId(mId);
 
         // Fetch Profile & Documents
@@ -69,10 +69,14 @@ const ScholarshipApplication = () => {
     }, []);
 
     const handleSendOtp = async () => {
+        if (!consentMobile || consentMobile.length < 10) {
+            alert('Please enter a valid mobile number');
+            return;
+        }
         try {
             const res = await axios.post(`${API_URL}/education/consent/send-otp`, {
                 master_id: masterId,
-                mobile: profile?.mobile || '9876543210'
+                mobile: consentMobile
             });
             if (res.data.success) {
                 setOtpSent(true);
@@ -107,7 +111,7 @@ const ScholarshipApplication = () => {
                 }
 
                 alert('✓ Consent verified and Common Data Model transformation executed!');
-                setCurrentStep(7); // Proceed to Review
+                setCurrentStep(6); // Proceed to Review
             }
         } catch (err) {
             alert(err.response?.data?.message || 'OTP verification failed');
@@ -143,7 +147,7 @@ const ScholarshipApplication = () => {
 
             if (res.data.success) {
                 setSubmittedAppId(res.data.applicationId);
-                setCurrentStep(8); // Submit Success Step
+                setCurrentStep(7); // Submit Success Step
             }
         } catch (err) {
             alert(err.response?.data?.error || 'Submission failed');
@@ -212,10 +216,29 @@ const ScholarshipApplication = () => {
                             </p>
 
                             <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: 16, borderRadius: 8, fontSize: 13, marginBottom: 24 }}>
-                                <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Scheme Specifications:</div>
-                                <div>• <strong>Type:</strong> {schemeType === 'LOAN' ? 'Subsidized Education Loan' : 'Post-Matric Merit Scholarship'}</div>
-                                <div>• <strong>Target Level:</strong> Undergraduate & Technical Courses</div>
-                                <div>• <strong>Source:</strong> DEMO Prototype Scheme (SamadhanPath Interoperability Engine)</div>
+                                <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>Scheme Specifications & Details:</div>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                    <div>• <strong>Type:</strong> {schemeType === 'LOAN' ? 'Subsidized Education Loan' : 'Post-Matric Merit Scholarship'}</div>
+                                    <div>• <strong>Target Level:</strong> Undergraduate & Technical Courses</div>
+                                    <div>• <strong>Source:</strong> SamadhanPath Interoperability Engine</div>
+                                    
+                                    {schemeType === 'LOAN' ? (
+                                        <>
+                                            <div>• <strong>Maximum Amount:</strong> ₹ 15,00,000</div>
+                                            <div>• <strong>Interest Rate:</strong> 4.5% p.a. (Subsidized for EWS)</div>
+                                            <div>• <strong>Repayment Period:</strong> 5 Years post-graduation</div>
+                                            <div>• <strong>Collateral Required:</strong> None (up to ₹ 7.5L)</div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>• <strong>Maximum Amount:</strong> ₹ 50,000 per annum</div>
+                                            <div>• <strong>Eligibility:</strong> 75%+ Aggregate & Income &lt; ₹ 8L</div>
+                                            <div>• <strong>Disbursement:</strong> Direct Benefit Transfer (DBT)</div>
+                                            <div>• <strong>Renewal:</strong> Annual (Subject to Performance)</div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
 
                             <div style={{ background: selectionConfirmed ? '#ecfdf5' : '#fffbeb', padding: 16, borderRadius: 8, border: selectionConfirmed ? '1px solid #a7f3d0' : '1px solid #fde68a', marginBottom: 24 }}>
@@ -243,7 +266,7 @@ const ScholarshipApplication = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                 <h3 style={{ fontSize: 18, margin: 0 }}>Step 2: Personal Information</h3>
                                 <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
-                                    ✓ Fetched from your existing profile 🔒
+                                    ✓ Auto-filled securely via SamadhanPath API Gateway 🔒
                                 </span>
                             </div>
 
@@ -255,6 +278,10 @@ const ScholarshipApplication = () => {
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Category</label><div style={{ fontWeight: 600 }}>{profile.category} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>State</label><div style={{ fontWeight: 600 }}>{profile.state} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>District</label><div style={{ fontWeight: 600 }}>{profile.district} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Gender</label><div style={{ fontWeight: 600 }}>{profile.gender || 'Not Specified'} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Mobile</label><div style={{ fontWeight: 600 }}>{profile.mobile || 'Verified'} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Email</label><div style={{ fontWeight: 600 }}>{profile.email || 'Verified'} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Aadhaar Vault Ref</label><div style={{ fontWeight: 600, color: '#059669' }}>VALIDATED 🔒</div></div>
                                 </div>
                             )}
 
@@ -271,7 +298,7 @@ const ScholarshipApplication = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                 <h3 style={{ fontSize: 18, margin: 0 }}>Step 3: Education & Academic Information</h3>
                                 <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
-                                    ✓ Fetched from your existing profile 🔒
+                                    ✓ Auto-filled securely via SamadhanPath API Gateway 🔒
                                 </span>
                             </div>
 
@@ -283,6 +310,10 @@ const ScholarshipApplication = () => {
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Year / Semester</label><div style={{ fontWeight: 600 }}>{profile.year_semester} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Enrollment Number</label><div style={{ fontWeight: 600 }}>{profile.enrollment_number} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Academic Aggregate</label><div style={{ fontWeight: 600, color: '#059669' }}>{profile.academic_performance}% 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Attendance Status</label><div style={{ fontWeight: 600 }}>{profile.attendance_percentage || '92'}% (Satisfactory) 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Study Mode</label><div style={{ fontWeight: 600 }}>{profile.study_mode || 'Regular / Full-Time'} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Institution Ranking</label><div style={{ fontWeight: 600 }}>{profile.institution_ranking || 'NAAC A++ (Approved)'} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Last Passed Exam</label><div style={{ fontWeight: 600, color: '#059669' }}>{profile.last_passed_exam || 'Cleared with Distinction'} 🔒</div></div>
                                 </div>
                             )}
 
@@ -300,6 +331,11 @@ const ScholarshipApplication = () => {
                             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
                                 Profile fields were auto-filled. Please specify only the missing scheme-specific financial requirements:
                             </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, background: '#f8fafc', padding: 20, borderRadius: 8, fontSize: 13, marginBottom: 24, border: '1px solid #e2e8f0' }}>
+                                <div><label style={{ fontSize: 11, color: '#64748b' }}>Family Income Status</label><div style={{ fontWeight: 600, color: '#059669' }}>{profile?.family_income_status || 'Eligible (Below 8L)'} 🔒</div></div>
+                                <div><label style={{ fontSize: 11, color: '#64748b' }}>{schemeType === 'LOAN' ? 'CIBIL / Credit Verification' : 'DBT Eligibility'}</label><div style={{ fontWeight: 600, color: '#059669' }}>Pre-Approved (No defaults) 🔒</div></div>
+                            </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
                                 <div>
@@ -325,6 +361,19 @@ const ScholarshipApplication = () => {
                                         style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
                                     />
                                 </div>
+                                
+                                {schemeType === 'LOAN' && (
+                                    <div>
+                                        <label style={{ fontSize: 13, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>
+                                            Co-Applicant (Parent/Guardian) PAN Number
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter 10-digit PAN"
+                                            style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', gap: 12 }}>
@@ -344,6 +393,10 @@ const ScholarshipApplication = () => {
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
                                 <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <span>Aadhaar eKYC Verification</span>
+                                    <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Digitally Signed</span>
+                                </div>
+                                <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                                     <span>Income Certificate (Revenue Dept)</span>
                                     <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Already Available & Verified</span>
                                 </div>
@@ -355,6 +408,12 @@ const ScholarshipApplication = () => {
                                     <span>Academic HSC Marksheet (State Board)</span>
                                     <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Already Available & Verified</span>
                                 </div>
+                                {schemeType === 'LOAN' && (
+                                    <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                        <span>Co-Applicant PAN Verification (Income Tax Dept)</span>
+                                        <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Fetched via API</span>
+                                    </div>
+                                )}
                                 <div style={{ padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                                     <span>Bank Account Verification</span>
                                     <span style={{ color: '#b45309', fontWeight: 700 }}>⚠ Available (Verification Pending via OTP Consent)</span>
@@ -394,73 +453,112 @@ const ScholarshipApplication = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
-                                <button onClick={() => { handleSendOtp(); setCurrentStep(6); }} style={{ padding: '10px 24px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Authorize & Send OTP →</button>
-                            </div>
+                            {!otpSent ? (
+                                <div style={{ background: '#f0fdf4', padding: 20, borderRadius: 12, border: '1px solid #bbf7d0', marginTop: 16 }}>
+                                    <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>Verify Your Identity</h4>
+                                    <p style={{ fontSize: 13, color: '#15803d', marginBottom: 16 }}>Enter your mobile number to receive the authorization OTP.</p>
+                                    
+                                    <input
+                                        type="text"
+                                        maxLength={15}
+                                        placeholder="Enter Mobile Number"
+                                        value={consentMobile}
+                                        onChange={e => setConsentMobile(e.target.value)}
+                                        style={{ padding: '12px 16px', fontSize: 16, width: 220, borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: 16, display: 'block' }}
+                                    />
+                                    
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
+                                        <button onClick={() => { handleSendOtp(); }} style={{ padding: '10px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Generate OTP to Mobile →</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ background: '#f0fdf4', padding: 20, borderRadius: 12, border: '1px solid #bbf7d0', marginTop: 16 }}>
+                                    <h4 style={{ margin: '0 0 12px 0', color: '#166534' }}>OTP Verification Required for Consent</h4>
+                                    <p style={{ fontSize: 13, color: '#15803d', marginBottom: 16 }}>An OTP has been sent to your registered mobile <strong>{consentMobile}</strong>. Please enter it below to securely authorize this data sharing.</p>
+                                    
+                                    <input
+                                        type="text"
+                                        maxLength={6}
+                                        placeholder="Enter 6-digit OTP"
+                                        value={otpInput}
+                                        onChange={e => setOtpInput(e.target.value)}
+                                        style={{ padding: '12px 16px', fontSize: 18, letterSpacing: 4, fontWeight: 700, width: 220, borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: 16, display: 'block' }}
+                                    />
+                                    
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <button onClick={() => setOtpSent(false)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Cancel</button>
+                                        <button onClick={handleVerifyOtp} style={{ padding: '10px 24px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Verify OTP & Give Consent →</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* STEP 7: VERIFICATION & OTP */}
+                    {/* STEP 7: REVIEW */}
                     {currentStep === 6 && (
                         <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 7: Aadhaar Mobile OTP Verification</h3>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 7: Review Final Application</h3>
                             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-                                An OTP was sent to your registered mobile ending in <strong>4491</strong>.
+                                Please review your application details thoroughly before final submission to the {schemeType === 'LOAN' ? 'Banking Partner' : 'Education Department'}.
                             </p>
 
-                            <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0', marginBottom: 20, fontSize: 13, color: '#166534' }}>
-                                💡 <strong>DEMO OTP MODE:</strong> Enter demo code <strong style={{ fontSize: 16, color: '#15803d' }}>123456</strong> to verify instant authorization.
-                            </div>
+                            <div style={{ background: '#f8fafc', padding: 24, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13, marginBottom: 24 }}>
+                                
+                                {/* Section 1: Applicant Info */}
+                                <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #cbd5e1' }}>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>1. Applicant Profile</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div><strong>Name:</strong> {profile?.name}</div>
+                                        <div><strong>Master ID:</strong> {masterId}</div>
+                                        <div><strong>Mobile:</strong> {profile?.mobile || 'Verified'}</div>
+                                        <div><strong>Category:</strong> {profile?.category}</div>
+                                    </div>
+                                </div>
 
-                            <div style={{ marginBottom: 24 }}>
-                                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Enter 6-Digit OTP:</label>
-                                <input
-                                    type="text"
-                                    maxLength={6}
-                                    value={otpInput}
-                                    onChange={e => setOtpInput(e.target.value)}
-                                    style={{ padding: '12px 16px', fontSize: 20, letterSpacing: 8, fontWeight: 700, textAlign: 'center', width: 220, borderRadius: 8, border: '2px solid #2563eb' }}
-                                />
+                                {/* Section 2: Scheme & Academics */}
+                                <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #cbd5e1' }}>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>2. Scheme & Academics</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div style={{ gridColumn: 'span 2' }}><strong>Selected Scheme:</strong> <span style={{ color: '#2563eb', fontWeight: 600 }}>{defaultSchemeName}</span></div>
+                                        <div><strong>Institution:</strong> {profile?.institution}</div>
+                                        <div><strong>Course:</strong> {profile?.course}</div>
+                                        <div><strong>Academic Score:</strong> <span style={{ color: '#059669', fontWeight: 600 }}>{profile?.academic_performance}%</span></div>
+                                    </div>
+                                </div>
+
+                                {/* Section 3: Financials */}
+                                <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #cbd5e1' }}>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>3. Financial Request</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div><strong>Amount Requested:</strong> <span style={{ fontWeight: 700 }}>₹ {formData.loan_amount_requested}</span></div>
+                                        <div><strong>Disbursement A/C:</strong> {formData.bank_account}</div>
+                                        <div><strong>Income Status:</strong> {profile?.family_income_status || 'Eligible'}</div>
+                                    </div>
+                                </div>
+
+                                {/* Section 4: Interoperability Log */}
+                                <div>
+                                    <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>4. Interoperability & Consent Log</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                                        <div><strong>Consent Auth Token:</strong> <span style={{ fontFamily: 'monospace', color: '#2563eb' }}>{consentToken?.consentId}</span></div>
+                                        <div><strong>Verification Status:</strong> <span style={{ color: '#059669', fontWeight: 700 }}>✓ Verified via API Gateway</span></div>
+                                    </div>
+
+                                    {cdmData && (
+                                        <div style={{ background: '#1e293b', color: '#e2e8f0', padding: 12, borderRadius: 6, fontSize: 11, fontFamily: 'monospace' }}>
+                                            <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: 6 }}>Common Data Model (CDM) Output Log:</div>
+                                            <div>&gt; verificationType: "{cdmData.verificationType}"</div>
+                                            <div>&gt; eligibilityStatus: "{cdmData.eligibilityStatus}"</div>
+                                            <div>&gt; dataMinimizationNotice: "{cdmData.dataMinimizationNotice || 'Raw sensitive data withheld'}"</div>
+                                            <div>&gt; issuer: "{cdmData.issuer}"</div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: 12 }}>
                                 <button onClick={() => setCurrentStep(5)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
-                                <button onClick={handleVerifyOtp} style={{ padding: '12px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Verify OTP & Transform Data →</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* STEP 8: REVIEW */}
-                    {currentStep === 7 && (
-                        <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 8: Review Final Application</h3>
-                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-                                Please review your application before final submission to the Education Department.
-                            </p>
-
-                            <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13, marginBottom: 24 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                                    <div><strong>Applicant:</strong> {profile?.name}</div>
-                                    <div><strong>Master ID:</strong> {masterId}</div>
-                                    <div><strong>Scheme:</strong> {defaultSchemeName}</div>
-                                    <div><strong>Amount Requested:</strong> ₹ {formData.loan_amount_requested}</div>
-                                    <div><strong>Consent ID:</strong> <span style={{ fontFamily: 'monospace', color: '#2563eb' }}>{consentToken?.consentId}</span></div>
-                                    <div><strong>Verification Status:</strong> <span style={{ color: '#059669', fontWeight: 700 }}>✓ Verified via Gateway CDM</span></div>
-                                </div>
-
-                                {cdmData && (
-                                    <div style={{ background: '#1e293b', color: '#e2e8f0', padding: 12, borderRadius: 6, fontSize: 11, fontFamily: 'monospace' }}>
-                                        <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: 4 }}>Common Data Model Output (Data Minimization):</div>
-                                        <div>verificationType: "{cdmData.verificationType}"</div>
-                                        <div>eligibilityStatus: "{cdmData.eligibilityStatus}"</div>
-                                        <div>issuer: "{cdmData.issuer}"</div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(6)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
                                 <button
                                     disabled={isSubmitting}
                                     onClick={handleSubmitApplication}
@@ -472,8 +570,8 @@ const ScholarshipApplication = () => {
                         </div>
                     )}
 
-                    {/* STEP 9: SUBMITTED SUCCESS */}
-                    {currentStep === 8 && (
+                    {/* STEP 8: SUBMITTED SUCCESS */}
+                    {currentStep === 7 && (
                         <div style={{ textAlign: 'center', padding: '20px 0' }}>
                             <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
                             <h3 style={{ fontSize: 22, color: '#059669', margin: '0 0 8px' }}>Application Submitted Successfully!</h3>

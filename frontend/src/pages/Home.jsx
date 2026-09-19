@@ -151,7 +151,7 @@ const Home = () => {
                                     <div style={{ fontSize: 40, marginBottom: 16 }}>{domain.icon}</div>
                                     <h3 style={{ fontSize: 20, marginBottom: 8 }}>{domain.title}</h3>
                                     <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 24 }}>{domain.desc}</p>
-                                    <Link to="/services" style={{ color: domain.color, fontWeight: 600, textDecoration: 'none', fontSize: 14 }}>
+                                    <Link to={domain.link} style={{ color: domain.color, fontWeight: 600, textDecoration: 'none', fontSize: 14 }}>
                                         Explore Services →
                                     </Link>
                                 </div>

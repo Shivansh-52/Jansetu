@@ -40,7 +40,7 @@ const AdminDashboard = () => {
 
     // District-specific
     const user = useMemo(() => {
-        try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
+        try { return JSON.parse(sessionStorage.getItem('user')); } catch { return null; }
     }, []);
     const adminDistrict = user?.district || '';
     const [districtCoords, setDistrictCoords] = useState(null);
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
             if (searchRefId) params.append('ref_id', searchRefId);
             if (filterStatus !== 'All') params.append('status', filterStatus);
 
-            const token = localStorage.getItem('token');
+            const token = sessionStorage.getItem('token');
             const response = await axios.get(`${API_URL}/admin/all?${params.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });

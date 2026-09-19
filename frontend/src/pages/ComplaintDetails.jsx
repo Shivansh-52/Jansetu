@@ -39,7 +39,7 @@ const ComplaintDetails = () => {
 
     useEffect(() => {
         try {
-            const s = localStorage.getItem('user');
+            const s = sessionStorage.getItem('user');
             if (s) setUser(JSON.parse(s));
         } catch { }
         fetchDetails();

@@ -8,7 +8,7 @@ const Dashboard = () => {
     const [connectedServices, setConnectedServices] = useState([]);
 
     useEffect(() => {
-        const storedMasterId = localStorage.getItem('masterId');
+        const storedMasterId = sessionStorage.getItem('masterId');
         if (!storedMasterId) {
             navigate('/login');
             return;
@@ -17,7 +17,7 @@ const Dashboard = () => {
         
         // In a real app, fetch this from the Gateway /api/auth/me equivalent
         try {
-            const services = JSON.parse(localStorage.getItem('connectedServices')) || [];
+            const services = JSON.parse(sessionStorage.getItem('connectedServices')) || [];
             setConnectedServices(services);
         } catch (e) {
             setConnectedServices([]);

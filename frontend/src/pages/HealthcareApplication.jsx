@@ -60,7 +60,7 @@ const HealthcareApplication = () => {
     const [profile, setProfile] = useState(null);
 
     useEffect(() => {
-        const storedMasterId = localStorage.getItem('masterId');
+        const storedMasterId = sessionStorage.getItem('masterId');
         if (!storedMasterId) {
             navigate('/login');
             return;
@@ -85,13 +85,13 @@ const HealthcareApplication = () => {
         setIsSubmitting(true);
         setTimeout(() => {
             try {
-                const logs = JSON.parse(localStorage.getItem('mockLogs')) || [];
+                const logs = JSON.parse(sessionStorage.getItem('mockLogs')) || [];
                 logs.push({
                     auditId: Date.now(), timestamp: new Date().toISOString(),
                     department: 'Healthcare', action: 'Medical Subsidy Approved', result: 'SUCCESS',
                     currentHash: 'h84d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2e8888'
                 });
-                localStorage.setItem('mockLogs', JSON.stringify(logs));
+                sessionStorage.setItem('mockLogs', JSON.stringify(logs));
             } catch (e) {}
             setCurrentStep(6);
         }, 2000);

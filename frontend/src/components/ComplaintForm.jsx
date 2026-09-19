@@ -13,7 +13,7 @@ const ComplaintForm = ({ onComplaintSubmitted }) => {
     // Safe User Retrieval
     const getUser = () => {
         try {
-            const stored = localStorage.getItem('user');
+            const stored = sessionStorage.getItem('user');
             return stored ? JSON.parse(stored) : null;
         } catch (e) {
             return null;

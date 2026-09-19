@@ -2,17 +2,40 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getEducationDocuments } from '../services/api';
 import { motion } from 'framer-motion';
+import axios from 'axios';
+import { API_URL } from '../services/api';
 
 const DocumentVault = () => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const getUser = () => {
-        try { const s = localStorage.getItem('user'); return s ? JSON.parse(s) : null; }
+        try { const s = sessionStorage.getItem('user'); return s ? JSON.parse(s) : null; }
         catch { return null; }
     };
     const user = getUser();
     if (!user) { window.location.href = '/login'; return null; }
+
+    const [correctionModal, setCorrectionModal] = useState({ isOpen: false, doc: null, reason: '', loading: false });
+
+    const handleCorrectionSubmit = async () => {
+        if (!correctionModal.reason.trim()) return alert("Please provide a reason.");
+        setCorrectionModal(prev => ({ ...prev, loading: true }));
+        try {
+            const token = sessionStorage.getItem('token');
+            const res = await axios.post(`${API_URL}/complaints/data-correction`, {
+                doc_number: correctionModal.doc.doc_number,
+                doc_name: correctionModal.doc.doc_name,
+                department: correctionModal.doc.issuing_dept,
+                reason: correctionModal.doc.reason
+            }, { headers: { Authorization: `Bearer ${token}` } });
+            alert(res.data.message || "Request submitted successfully.");
+            setCorrectionModal({ isOpen: false, doc: null, reason: '', loading: false });
+        } catch (error) {
+            alert(error.response?.data?.error || "Submission failed.");
+            setCorrectionModal(prev => ({ ...prev, loading: false }));
+        }
+    };
 
     useEffect(() => {
         const fetchDocs = async () => {
@@ -77,14 +100,45 @@ const DocumentVault = () => {
                                         <strong style={{ fontSize: 12 }}>{new Date(doc.issue_date).toLocaleDateString()}</strong>
                                     </div>
                                 </div>
-                                <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center' }}>
-                                    Available for Inter-departmental Reuse
-                                </p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)' }}>
+                                        Available for Inter-departmental Reuse
+                                    </p>
+                                    <button 
+                                        onClick={() => setCorrectionModal({ isOpen: true, doc: doc, reason: '', loading: false })}
+                                        style={{ background: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 8px', borderRadius: 4, fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+                                        Report Incorrect Data
+                                    </button>
+                                </div>
                             </motion.div>
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* CORRECTION MODAL */}
+            {correctionModal.isOpen && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div style={{ background: 'white', padding: 24, borderRadius: 12, width: '100%', maxWidth: 400 }}>
+                        <h3 style={{ margin: '0 0 16px 0', fontSize: 18, color: '#0f172a' }}>Request Data Correction</h3>
+                        <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
+                            Report incorrect information in your <strong>{correctionModal.doc.doc_name}</strong>. The <strong>{correctionModal.doc.issuing_dept}</strong> will review your request.
+                        </p>
+                        <textarea
+                            placeholder="Please describe the incorrect data and what it should be changed to..."
+                            value={correctionModal.reason}
+                            onChange={(e) => setCorrectionModal(prev => ({ ...prev, reason: e.target.value }))}
+                            style={{ width: '100%', height: 100, padding: 12, borderRadius: 8, border: '1px solid #cbd5e1', marginBottom: 16, fontSize: 13, resize: 'none' }}
+                        />
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                            <button onClick={() => setCorrectionModal({ isOpen: false, doc: null, reason: '', loading: false })} style={{ padding: '8px 16px', background: 'transparent', border: 'none', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={handleCorrectionSubmit} disabled={correctionModal.loading} style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, fontWeight: 600, cursor: correctionModal.loading ? 'not-allowed' : 'pointer' }}>
+                                {correctionModal.loading ? 'Submitting...' : 'Submit Request'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

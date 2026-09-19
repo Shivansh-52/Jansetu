@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../services/api';
+import { loginUser, sendOtp, verifyOtp } from '../services/api';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 
@@ -26,9 +26,14 @@ const Login = () => {
     const [showSsoModal, setShowSsoModal] = useState(false);
     const [ssoType, setSsoType] = useState(null); // 'aadhaar' or 'meripehchaan'
     const [ssoStep, setSsoStep] = useState(1);
+    const [aadhaarInput, setAadhaarInput] = useState('');
+    const [enteredOtp, setEnteredOtp] = useState('');
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [smsBanner, setSmsBanner] = useState(null);
 
     useEffect(() => {
-        const user = localStorage.getItem('user');
+        const user = sessionStorage.getItem('user');
         if (user) {
             try {
                 const parsed = JSON.parse(user);
@@ -49,10 +54,10 @@ const Login = () => {
             const data = await response.json();
             
             if (response.ok) {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                localStorage.setItem('masterId', data.user.master_id);
-                localStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
+                sessionStorage.setItem('token', data.token);
+                sessionStorage.setItem('user', JSON.stringify(data.user));
+                sessionStorage.setItem('masterId', data.user.master_id);
+                sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
                 navigate(ROLE_ROUTES[data.user.role] || '/dashboard', { replace: true });
             } else {
                 setError(data.error || 'Login failed');
@@ -117,13 +122,13 @@ const Login = () => {
                 <div className="card-js" style={{ padding: 32 }}>
                     
                     {/* SSO Buttons */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
                         <button 
                             type="button"
-                            onClick={() => { setSsoType('aadhaar'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setShowSsoModal(true); }}
+                            onClick={() => { setSsoType('aadhaar'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('234567890123'); setShowSsoModal(true); }}
                             style={{
-                                width: '100%', padding: '12px 16px', borderRadius: 8, background: '#fff',
-                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                width: '100%', padding: '10px 16px', borderRadius: 8, background: '#fff',
+                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 13,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
                             }}
                         >
@@ -132,58 +137,21 @@ const Login = () => {
                         </button>
                         <button 
                             type="button"
-                            onClick={() => { setSsoType('meripehchaan'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setShowSsoModal(true); }}
+                            onClick={() => { setSsoType('digilocker'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('aarav.digilocker'); setShowSsoModal(true); }}
                             style={{
-                                width: '100%', padding: '12px 16px', borderRadius: 8, background: '#fff',
-                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                width: '100%', padding: '10px 16px', borderRadius: 8, background: '#fff',
+                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 13,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
                             }}
                         >
-                            <div style={{ width: 24, height: 24, background: '#3b82f6', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 'bold' }}>M</div>
-                            Login with MeriPehchaan
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 20, objectFit: 'contain' }} />
+                            Login with DigiLocker SSO
                         </button>
                     </div>
 
-                    {/* 1-Click Demo Accounts Banner */}
-                    <div style={{ background: '#f8fafc', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', marginBottom: 24 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: '#2563eb', marginBottom: 8, textTransform: 'uppercase' }}>
-                            ⚡ 1-Click Demo Accounts (Instant Testing)
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                            <button
-                                type="button"
-                                onClick={() => performLogin('student@jansetu.ai', 'student123')}
-                                style={{ padding: '8px 10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                            >
-                                🎓 Student Demo
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => performLogin('officer@jansetu.ai', 'officer123')}
-                                style={{ padding: '8px 10px', background: '#059669', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                            >
-                                📋 Officer Demo
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => performLogin('citizen@jansetu.ai', 'citizen123')}
-                                style={{ padding: '8px 10px', background: '#475569', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                            >
-                                👤 Citizen Demo
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => performLogin('admin@jansetu.ai', 'admin123')}
-                                style={{ padding: '8px 10px', background: '#7c3aed', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}
-                            >
-                                🛡️ Admin Demo
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
                         <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
-                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>OR LOGIN WITH MASTER ID</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 0.5 }}>OR LOGIN WITH CREDENTIALS</span>
                         <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
                     </div>
                     {error && (
@@ -202,15 +170,15 @@ const Login = () => {
                     )}
 
                     <form onSubmit={handleLogin}>
-                        <div style={{ marginBottom: 18 }}>
+                        <div style={{ marginBottom: 16 }}>
                             <label style={{
                                 display: 'block', fontSize: 13, fontWeight: 600,
-                                color: 'var(--text-secondary)', marginBottom: 8
-                            }}>Master ID / Mobile / Email</label>
+                                color: 'var(--text-secondary)', marginBottom: 6
+                            }}>Master ID / Aadhaar / Mobile / Username</label>
                             <input
                                 type="text"
                                 className="input-js"
-                                placeholder="e.g. SP-000001 or you@example.com"
+                                placeholder="e.g. 234567890123"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -218,10 +186,10 @@ const Login = () => {
                             />
                         </div>
 
-                        <div style={{ marginBottom: 22 }}>
+                        <div style={{ marginBottom: 20 }}>
                             <label style={{
                                 display: 'block', fontSize: 13, fontWeight: 600,
-                                color: 'var(--text-secondary)', marginBottom: 8
+                                color: 'var(--text-secondary)', marginBottom: 6
                             }}>Password</label>
                             <input
                                 type="password"
@@ -244,7 +212,7 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div style={{ textAlign: 'center', marginTop: 24, color: 'var(--text-secondary)' }}>
+                    <div style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-secondary)', fontSize: 13 }}>
                         Don't have a Master ID? <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Create one now</Link>
                     </div>
                 </div>
@@ -263,10 +231,10 @@ const Login = () => {
                             {ssoType === 'aadhaar' ? (
                                 <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 40, marginBottom: 16 }} />
                             ) : (
-                                <div style={{ width: 48, height: 48, background: '#3b82f6', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 'bold', margin: '0 auto 16px' }}>M</div>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 40, marginBottom: 16, objectFit: 'contain' }} />
                             )}
                             <h3 style={{ margin: 0, fontSize: 20 }}>
-                                {ssoType === 'aadhaar' ? 'Aadhaar Authentication' : 'MeriPehchaan SSO'}
+                                {ssoType === 'aadhaar' ? 'Aadhaar Authentication' : 'DigiLocker SSO Authentication'}
                             </h3>
                         </div>
 
@@ -305,18 +273,18 @@ const Login = () => {
                             <div>
                                 <div style={{ marginBottom: 16 }}>
                                     <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6, textAlign: 'center' }}>
-                                        {ssoType === 'aadhaar' ? 'Enter 12-Digit Aadhaar Number OR Registered Mobile' : 'Enter MeriPehchaan ID / Mobile'}
+                                        {ssoType === 'aadhaar' ? 'Enter 12-Digit Aadhaar Number OR Registered Mobile' : 'Enter DigiLocker ID / Registered Mobile'}
                                     </label>
                                     <input 
                                         type="text" 
-                                        placeholder={ssoType === 'aadhaar' ? "Aadhaar / Mobile (e.g. 7717465014)" : "Username / Mobile"} 
+                                        placeholder={ssoType === 'aadhaar' ? "Aadhaar / Mobile (e.g. 234567890123)" : "DigiLocker ID (e.g. aarav.digilocker)"} 
                                         value={aadhaarInput}
                                         onChange={e => setAadhaarInput(e.target.value)}
                                         className="input-js" 
-                                        style={{ textAlign: 'center', letterSpacing: 2, fontSize: 16, fontWeight: 600 }} 
+                                        style={{ textAlign: 'center', letterSpacing: 1, fontSize: 15, fontWeight: 600 }} 
                                     />
                                     <span style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block', textAlign: 'center' }}>
-                                        📲 Real OTP will be dispatched via Twilio Verify to +91 {aadhaarInput.trim() || '7717465014'}
+                                        📲 Real OTP will be dispatched via Twilio Verify to your linked phone
                                     </span>
                                 </div>
 
@@ -369,12 +337,19 @@ const Login = () => {
                                         setOtpLoading(true);
                                         setOtpError('');
                                         try {
-                                            await verifyOtp(targetInput, enteredOtp);
+                                            const res = await verifyOtp(targetInput, enteredOtp);
                                             setShowSsoModal(false);
                                             setSmsBanner(null);
                                             setEnteredOtp('');
-                                            // Authenticate user session upon successful Twilio OTP verification
-                                            await performLogin('citizen@jansetu.ai', 'citizen123');
+                                            
+                                            // Handle successful login
+                                            sessionStorage.setItem('token', res.token);
+                                            sessionStorage.setItem('user', JSON.stringify(res.user));
+                                            if(res.user.master_id) {
+                                                sessionStorage.setItem('masterId', res.user.master_id);
+                                            }
+                                            sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
+                                            navigate(ROLE_ROUTES[res.user.role] || '/dashboard', { replace: true });
                                         } catch (err) {
                                             setOtpError(err.response?.data?.error || 'Incorrect OTP code. Please try again.');
                                         } finally {

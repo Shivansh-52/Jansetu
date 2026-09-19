@@ -14,7 +14,7 @@ const ContractorDashboard = () => {
     const [statusMsg, setStatusMsg] = useState('');
 
     const user = (() => {
-        try { return JSON.parse(localStorage.getItem('user')) || {}; }
+        try { return JSON.parse(sessionStorage.getItem('user')) || {}; }
         catch { return {}; }
     })();
 

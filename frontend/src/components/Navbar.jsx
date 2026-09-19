@@ -8,7 +8,7 @@ const Navbar = () => {
     const location = useLocation();
 
     useEffect(() => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         if (userStr) {
             try { setUser(JSON.parse(userStr)); } catch { setUser(null); }
         } else {
@@ -34,8 +34,8 @@ const Navbar = () => {
     }, [menuOpen]);
 
     const handleLogout = () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
         setUser(null);
         window.location.href = '/';
     };

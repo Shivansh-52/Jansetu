@@ -9,7 +9,7 @@ const RegisterComplaint = () => {
     // Check if user is logged in
     let loggedInUser = null;
     try {
-        const u = localStorage.getItem('user');
+        const u = sessionStorage.getItem('user');
         if (u) loggedInUser = JSON.parse(u);
     } catch { }
 

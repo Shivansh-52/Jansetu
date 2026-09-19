@@ -43,6 +43,8 @@ def log_request_info():
 
 # Initialize Database
 init_db(app)
+from database.cloud_db import init_cloud_dbs
+init_cloud_dbs()
 
 # Start background escalation scanner (daemon thread)
 from services.escalation_service import start_escalation_service

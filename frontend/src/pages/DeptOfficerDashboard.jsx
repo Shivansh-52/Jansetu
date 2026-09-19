@@ -20,7 +20,7 @@ const DeptOfficerDashboard = () => {
     const [officerRemarks, setOfficerRemarks] = useState('Income and academic documents verified via Gateway CDM. Approved.');
 
     useEffect(() => {
-        const u = localStorage.getItem('user');
+        const u = sessionStorage.getItem('user');
         if (u) { try { setUser(JSON.parse(u)); } catch { } }
     }, []);
 
@@ -229,13 +229,30 @@ const DeptOfficerDashboard = () => {
                     </div>
                 )}
 
-                {/* TAB 2: GRIEVANCES */}
+                {/* TAB 2: GRIEVANCES & DATA CORRECTION */}
                 {activeTab === 'unassigned' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         {complaints.map(c => (
-                            <div key={c._id} style={{ background: 'white', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                                <div style={{ fontWeight: 700 }}>{c.ref_id || c._id}</div>
-                                <p style={{ margin: '4px 0', fontSize: 13 }}>{c.complaint_text}</p>
+                            <div key={c._id} style={{ background: 'white', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0', borderLeft: c.category === 'Data Correction' ? '4px solid #8b5cf6' : '4px solid #94a3b8' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        <span style={{ fontWeight: 700, fontFamily: 'monospace', color: '#334155' }}>{c.ref_id || c._id}</span>
+                                        {c.category === 'Data Correction' && (
+                                            <span style={{ fontSize: 11, background: '#ede9fe', color: '#7c3aed', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                                                DATA CORRECTION REQUEST
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span style={{ fontSize: 11, background: statusColor(c.status) + '18', color: statusColor(c.status), padding: '2px 8px', borderRadius: 12, fontWeight: 700 }}>{c.status}</span>
+                                </div>
+                                <p style={{ margin: '0 0 8px 0', fontSize: 13, color: '#0f172a', whiteSpace: 'pre-wrap' }}>{c.complaint_text}</p>
+                                
+                                {c.category === 'Data Correction' && c.document_info && (
+                                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, fontSize: 12, border: '1px solid #e2e8f0' }}>
+                                        <strong>Document Name:</strong> {c.document_info.doc_name} <br/>
+                                        <strong>Document Number:</strong> <span style={{ fontFamily: 'monospace' }}>{c.document_info.doc_number}</span>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>

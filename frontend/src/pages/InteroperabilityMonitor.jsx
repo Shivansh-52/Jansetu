@@ -8,7 +8,7 @@ const InteroperabilityMonitor = () => {
         const fetchLogs = () => {
             try {
                 // Mocking the backend API call to fetch logs
-                const localLogs = JSON.parse(localStorage.getItem('mockLogs')) || [];
+                const localLogs = JSON.parse(sessionStorage.getItem('mockLogs')) || [];
                 
                 // If empty, supply some initial mocked data to make the demo look good
                 if (localLogs.length === 0) {

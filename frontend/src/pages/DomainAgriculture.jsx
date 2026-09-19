@@ -10,7 +10,7 @@ const DomainAgriculture = () => {
     const [masterId, setMasterId] = useState(null);
     
     React.useEffect(() => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         if (!userStr) {
             window.location.href = '/login';
             return;

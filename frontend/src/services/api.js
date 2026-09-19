@@ -26,7 +26,7 @@ const api = axios.create({
 // Add a request interceptor to attach the token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -47,8 +47,8 @@ export const loginUser = async (email, password, context) => {
     }
     const response = await api.post('/auth/login', payload);
     if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        sessionStorage.setItem('token', response.data.token);
+        sessionStorage.setItem('user', JSON.stringify(response.data.user));
     }
     return response.data;
 };
@@ -58,18 +58,33 @@ export const registerUser = async (userData) => {
     return response.data;
 };
 
-export const sendOtp = async (aadhaarOrMobile) => {
-    const response = await api.post('/auth/send-otp', { aadhaar_or_mobile: aadhaarOrMobile });
+export const sendOtp = async (aadhaarOrMobile, isRegister = false) => {
+    const response = await api.post('/auth/send-otp', { aadhaar_or_mobile: aadhaarOrMobile, is_register: isRegister });
     return response.data;
 };
 
-export const verifyOtp = async (aadhaarOrMobile, otpCode) => {
-    const response = await api.post('/auth/verify-otp', { aadhaar_or_mobile: aadhaarOrMobile, otp_code: otpCode });
+export const verifyOtp = async (aadhaarOrMobile, otpCode, isRegister = false) => {
+    const response = await api.post('/auth/verify-otp', { aadhaar_or_mobile: aadhaarOrMobile, otp_code: otpCode, is_register: isRegister });
+    return response.data;
+};
+
+export const verifyAadhaar = async (userId, aadhaarNumber) => {
+    const response = await api.post('/auth/verify-aadhaar', { user_id: userId, aadhaar_number: aadhaarNumber });
+    return response.data;
+};
+
+export const updateAadhaarDetails = async (userId, kycData) => {
+    const response = await api.post('/auth/update-aadhaar-details', { user_id: userId, kyc_data: kycData });
+    return response.data;
+};
+
+export const verifyDigilocker = async (userId, digilockerId, mpin) => {
+    const response = await api.post('/auth/verify-digilocker', { user_id: userId, digilocker_id: digilockerId, mpin: mpin });
     return response.data;
 };
 
 export const submitComplaint = async (formData) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const headers = {};
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -110,7 +125,7 @@ export const uploadWorkerWork = async (formData) => {
     // console.log("Uploading FormData...");
 
     // Create a fresh request to avoid 'Content-Type: application/json' default from 'api' instance
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const response = await axios.post(`${API_URL}/worker/upload-work`, formData, {
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -305,7 +320,7 @@ export const getContractorDashboard = async (contractorId = '') => {
 };
 
 export const uploadContractorRepair = async (formData) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const response = await axios.post(`${API_URL}/contractor/upload-repair`, formData, {
         headers: {
             'Authorization': `Bearer ${token}`

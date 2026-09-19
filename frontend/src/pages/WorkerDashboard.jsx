@@ -29,7 +29,7 @@ const WorkerDashboard = () => {
     const [verificationResult, setVerificationResult] = useState(null);
 
     const getUser = () => {
-        try { return JSON.parse(localStorage.getItem('user')); }
+        try { return JSON.parse(sessionStorage.getItem('user')); }
         catch { return null; }
     };
     const user = getUser();
