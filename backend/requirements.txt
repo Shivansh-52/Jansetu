@@ -19,3 +19,6 @@ dnspython
 certifi
 bcrypt
 gunicorn
+SQLAlchemy
+psycopg2-binary
+pymysql
