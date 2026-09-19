@@ -56,8 +56,8 @@ def init_db(app=None):
         try:
             client = MongoClient(
                 uri,
-                serverSelectionTimeoutMS=3000,
-                connectTimeoutMS=3000,
+                serverSelectionTimeoutMS=500,
+                connectTimeoutMS=500,
             )
             client.admin.command('ping')
             db = client[db_name]
@@ -72,8 +72,8 @@ def init_db(app=None):
             client = MongoClient(
                 uri,
                 tlsCAFile=CA_FILE,
-                serverSelectionTimeoutMS=10000,
-                connectTimeoutMS=10000,
+                serverSelectionTimeoutMS=500,
+                connectTimeoutMS=500,
             )
             client.admin.command('ping')
             db = client[db_name]
@@ -124,9 +124,17 @@ def init_db(app=None):
         print(f"[DB] Connected to LOCAL MongoDB fallback: {db_name}")
         return db
     except Exception as e:
-        print(f"[DB] ALL connection strategies failed. Last error: {e}")
-        db = None
-        return None
+        print(f"[DB] Real MongoDB connections unavailable: {e}")
+        try:
+            import mongomock
+            client = mongomock.MongoClient()
+            db = client[db_name]
+            print(f"[DB] Connected to IN-MEMORY Mock MongoDB ({db_name}) for Standalone Demo Mode.")
+            return db
+        except Exception as err:
+            print(f"[DB] ALL connection strategies failed: {err}")
+            db = None
+            return None
 
 
 def get_db():

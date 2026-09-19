@@ -1,317 +1,502 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
+import { API_URL } from '../services/api';
 
 const STEPS = [
-    'Basic',
-    'Academic',
-    'Requirements',
-    'Consent',
-    'Verification',
-    'Review',
-    'Submit'
+    '1. Overview',
+    '2. Personal Info',
+    '3. Education Info',
+    '4. Financial Info',
+    '5. Documents',
+    '6. Consent',
+    '7. Verification & OTP',
+    '8. Review',
+    '9. Submit'
 ];
-
-const InteroperabilityExplanations = {
-    0: {
-        title: 'Single Verified Citizen Profile',
-        description: 'One profile (identity, academic, bank details) is reused everywhere so people stop re-entering the same information.',
-        tech: 'The Gateway securely fetched the Citizen Profile for Master ID directly, pre-filling verified details.'
-    },
-    1: {
-        title: 'Reusable Connectors & Standard Data',
-        description: 'Ready-made plug-ins for each government system (APAAR, Education) so departments can communicate without replacing their legacy systems.',
-        tech: 'This academic data will be structured in a Common Data Standard format so the target department can ingest it seamlessly.'
-    },
-    2: {
-        title: 'Interoperability / API Gateway Layer',
-        description: 'A middle layer that connects to each department\'s existing system through APIs, without replacing any of them.',
-        tech: 'The Gateway is simultaneously checking the Education Database and the Public Services Database to see if requirements are already met.'
-    },
-    3: {
-        title: 'Consent-Based Data Sharing',
-        description: 'Data only moves between systems when the citizen has given explicit consent for that specific purpose.',
-        tech: 'We use JWT (JSON Web Tokens) to cryptographically sign the consent. The Public Services department will verify this signature before releasing any data.'
-    },
-    4: {
-        title: 'Configurable Workflow Orchestration',
-        description: 'A flexible engine orchestrates the API calls in the background according to the Education department\'s specific rules.',
-        tech: 'The Gateway is now securely routing the JWT consent token to Public Services, and awaiting the response.'
-    },
-    5: {
-        title: 'Data Quality & Minimization Checks',
-        description: 'Only the exact information needed is shared. For example, instead of sharing raw salary figures, only a "True/False" eligibility flag is shared.',
-        tech: 'Notice how Income Eligibility says "Verified" without showing actual income. The API Gateway translated the raw data into a Common Data Standard.'
-    },
-    6: {
-        title: 'Unified Application Tracking & Audit Logs',
-        description: 'Every action is hash-logged for security. The citizen receives one unified tracking ID that works across all connected departments.',
-        tech: 'Generating a unified SP-EDU tracking ID and writing the final hash-chained transaction to the Interoperability log.'
-    }
-};
 
 const ScholarshipApplication = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    const schemeId = searchParams.get('scheme_id') || 'SCH-001';
+    const schemeType = searchParams.get('scheme_type') || 'SCHOLARSHIP';
+    const defaultSchemeName = searchParams.get('scheme_name') || (schemeType === 'LOAN' ? 'SamadhanPath Demo Student Education Loan' : 'SamadhanPath Demo Merit-cum-Means Post-Matric Scholarship');
+
     const [currentStep, setCurrentStep] = useState(0);
     const [masterId, setMasterId] = useState('');
-    
-    // Form State
-    const [academicInfo, setAcademicInfo] = useState({ institution: '', course: '', category: 'General' });
-    const [consentToken, setConsentToken] = useState(null);
-    const [verificationResults, setVerificationResults] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    
     const [profile, setProfile] = useState(null);
+    const [documents, setDocuments] = useState([]);
+
+    // Selection Confirmation State
+    const [selectionConfirmed, setSelectionConfirmed] = useState(false);
+
+    // Form Input for missing fields
+    const [formData, setFormData] = useState({
+        loan_amount_requested: '500000',
+        course_fee: '150000',
+        bank_account: '',
+        bank_ifsc: ''
+    });
+
+    // Verification & Consent State
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpInput, setOtpInput] = useState('123456');
+    const [consentToken, setConsentToken] = useState(null);
+    const [cdmData, setCdmData] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submittedAppId, setSubmittedAppId] = useState(null);
 
     useEffect(() => {
-        const storedMasterId = localStorage.getItem('masterId');
-        if (!storedMasterId) {
-            navigate('/login');
+        const userStr = localStorage.getItem('user');
+        const mId = localStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
+        setMasterId(mId);
+
+        // Fetch Profile & Documents
+        axios.get(`${API_URL}/education/profile?master_id=${mId}`)
+            .then(res => {
+                if (res.data) {
+                    setProfile(res.data);
+                    setDocuments(res.data.documents || []);
+                    setFormData(prev => ({
+                        ...prev,
+                        bank_account: res.data.bank_account || 'XXXX-XXXX-4491 (State Bank of India)',
+                        bank_ifsc: res.data.bank_ifsc || 'SBIN0001234'
+                    }));
+                }
+            })
+            .catch(console.error);
+    }, []);
+
+    const handleSendOtp = async () => {
+        try {
+            const res = await axios.post(`${API_URL}/education/consent/send-otp`, {
+                master_id: masterId,
+                mobile: profile?.mobile || '9876543210'
+            });
+            if (res.data.success) {
+                setOtpSent(true);
+            }
+        } catch (err) {
+            alert('Failed to send OTP');
+        }
+    };
+
+    const handleVerifyOtp = async () => {
+        try {
+            const res = await axios.post(`${API_URL}/education/consent/verify-otp`, {
+                master_id: masterId,
+                otp_code: otpInput,
+                purpose: `Interoperability verification for ${defaultSchemeName}`,
+                requesting_dept: 'Education Department',
+                source_dept: 'Public Services / Revenue Department'
+            });
+
+            if (res.data.success) {
+                setConsentToken(res.data.consent);
+
+                // Trigger Document CDM Verification
+                const verRes = await axios.post(`${API_URL}/education/verify-document`, {
+                    master_id: masterId,
+                    doc_type: 'income',
+                    doc_number: 'INC-2026-9812'
+                });
+
+                if (verRes.data.success) {
+                    setCdmData(verRes.data.cdm_data);
+                }
+
+                alert('✓ Consent verified and Common Data Model transformation executed!');
+                setCurrentStep(7); // Proceed to Review
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'OTP verification failed');
+        }
+    };
+
+    const handleSubmitApplication = async () => {
+        if (!selectionConfirmed) {
+            alert('Selection state is NOT SELECTED. Please confirm your scheme selection first.');
             return;
         }
-        setMasterId(storedMasterId);
-        
-        import('../services/microservicesApi').then(api => {
-            api.getEducationProfile(storedMasterId)
-                .then(setProfile)
-                .catch(console.error);
-        });
-    }, [navigate]);
 
-    const handleConsentApproval = async () => {
-        try {
-            // Mocking the Gateway Consent request
-            setTimeout(() => {
-                setConsentToken('mock-jwt-consent-token-abc123');
-                setCurrentStep(4);
-                
-                // Simulate Verification Process visually
-                setTimeout(() => {
-                    setVerificationResults({
-                        income: { verified: true, source: 'Public Services' },
-                        domicile: { verified: true, source: 'Public Services' }
-                    });
-                    setCurrentStep(5);
-                }, 3000);
-            }, 1000);
-        } catch (err) {
-            alert('Failed to generate consent.');
+        if (!consentToken) {
+            alert('Cannot submit: Required consent and OTP verification are incomplete.');
+            return;
         }
-    };
 
-    const submitApplication = async () => {
         setIsSubmitting(true);
         try {
-            setTimeout(() => {
-                try {
-                    const logs = JSON.parse(localStorage.getItem('mockLogs')) || [];
-                    logs.push({
-                        auditId: Date.now(), timestamp: new Date().toISOString(),
-                        department: 'Education', action: 'Scholarship Application Received', result: 'SUCCESS',
-                        currentHash: 'b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9'
-                    });
-                    localStorage.setItem('mockLogs', JSON.stringify(logs));
-                } catch (e) {}
+            const res = await axios.post(`${API_URL}/education/applications`, {
+                master_id: masterId,
+                scheme_id: schemeId,
+                scheme_name: defaultSchemeName,
+                scheme_type: schemeType,
+                consent_id: consentToken.consentId,
+                form_data: {
+                    ...formData,
+                    student_name: profile?.name,
+                    course: profile?.course,
+                    institution: profile?.institution
+                }
+            });
 
-                setCurrentStep(6);
-                navigate(`/tracking/SP-EDU-2026-${Math.floor(Math.random() * 10000)}`);
-            }, 2000);
+            if (res.data.success) {
+                setSubmittedAppId(res.data.applicationId);
+                setCurrentStep(8); // Submit Success Step
+            }
         } catch (err) {
-            alert('Submission failed');
+            alert(err.response?.data?.error || 'Submission failed');
         } finally {
-            setTimeout(() => setIsSubmitting(false), 2000);
+            setIsSubmitting(false);
         }
     };
 
-    const currentExplanation = InteroperabilityExplanations[currentStep];
-
     return (
-        <div style={{ padding: '0', display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
-            
-            {/* LEFT SIDE - WIZARD (50%) */}
-            <div style={{ flex: '1 1 50%', padding: '40px 60px', overflowY: 'auto' }}>
-                <h1 style={{ fontSize: 24, marginBottom: 20 }}>Scholarship Application</h1>
+        <div style={{ background: '#f8fafc', minHeight: '100vh', padding: '30px 20px' }}>
+            <div style={{ maxWidth: 900, margin: '0 auto' }}>
                 
-                {/* Stepper */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 40, borderBottom: '2px solid #e5e7eb', paddingBottom: 20 }}>
-                    {STEPS.map((step, idx) => (
-                        <div key={step} style={{ 
-                            color: currentStep >= idx ? 'var(--accent)' : '#9ca3af',
-                            fontWeight: currentStep === idx ? 700 : 500,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: 13
-                        }}>
+                {/* WIZARD HEADER */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                    <button onClick={() => navigate('/education')} style={{ background: 'white', border: '1px solid #cbd5e1', padding: '8px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#475569' }}>
+                        ← Back to Education Portal
+                    </button>
+                    <div style={{ fontSize: 13, color: '#64748b' }}>
+                        Master ID: <strong style={{ fontFamily: 'monospace', color: '#2563eb' }}>{masterId}</strong>
+                    </div>
+                </div>
+
+                <div style={{ background: 'white', borderRadius: 12, padding: 24, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 12, background: schemeType === 'LOAN' ? '#e0f2fe' : '#fef3c7', color: schemeType === 'LOAN' ? '#0369a1' : '#b45309' }}>
+                                {schemeType === 'LOAN' ? 'EDUCATION LOAN WIZARD' : 'SCHOLARSHIP WIZARD'}
+                            </span>
+                            <h2 style={{ fontSize: 20, margin: '6px 0 0', color: '#0f172a' }}>{defaultSchemeName}</h2>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Selection Status</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: selectionConfirmed ? '#dcfce7' : '#fee2e2', color: selectionConfirmed ? '#15803d' : '#dc2626' }}>
+                                {selectionConfirmed ? '✓ SCHEME SELECTED' : 'NOT SELECTED'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* STEP PROGRESS INDICATOR */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 30, background: 'white', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0', overflowX: 'auto' }}>
+                    {STEPS.map((stepLabel, idx) => (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 80 }}>
                             <div style={{
-                                width: 24, height: 24, borderRadius: '50%', background: currentStep >= idx ? 'var(--accent)' : '#e5e7eb',
-                                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8
+                                width: 28, height: 28, borderRadius: '50%', background: currentStep > idx ? '#10b981' : (currentStep === idx ? '#2563eb' : '#e2e8f0'),
+                                color: currentStep >= idx ? 'white' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, marginBottom: 4
                             }}>
-                                {idx + 1}
+                                {currentStep > idx ? '✓' : idx + 1}
                             </div>
-                            {step}
+                            <span style={{ fontSize: 10, fontWeight: currentStep === idx ? 700 : 500, color: currentStep === idx ? '#2563eb' : '#64748b', textAlign: 'center' }}>
+                                {stepLabel.split('. ')[1]}
+                            </span>
                         </div>
                     ))}
                 </div>
 
-                <div style={{ background: 'white', padding: 32, borderRadius: 12, border: '1px solid var(--border-light)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                {/* WIZARD CONTENT BOX */}
+                <div style={{ background: 'white', borderRadius: 12, padding: 32, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                    
+                    {/* STEP 1: OVERVIEW & SELECTION CONFIRMATION */}
                     {currentStep === 0 && (
                         <div>
-                            <h2 style={{ fontSize: 18, marginBottom: 20 }}>Basic Information</h2>
-                            <div style={{ background: '#ecfdf5', padding: 16, borderRadius: 8, marginBottom: 20, border: '1px solid #10b981' }}>
-                                <p style={{ margin: 0, fontSize: 14, color: '#059669', fontWeight: 600, marginBottom: 12 }}>✓ Retrieved from your Master ID profile.</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                    <div><label style={{ fontSize: 12, color: '#64748b' }}>Name</label><div style={{ fontWeight: 500 }}>{profile?.name || 'Loading...'} 🔒</div></div>
-                                    <div><label style={{ fontSize: 12, color: '#64748b' }}>Master ID</label><div style={{ fontWeight: 500 }}>{masterId} 🔒</div></div>
-                                </div>
-                            </div>
-                            <button onClick={() => setCurrentStep(1)} className="btn-primary">Continue</button>
-                        </div>
-                    )}
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 1: Application Overview & Selection</h3>
+                            <p style={{ fontSize: 13, color: '#475569', marginBottom: 20 }}>
+                                You are starting an interoperable application for <strong>{defaultSchemeName}</strong>. Please confirm your scheme selection to proceed.
+                            </p>
 
-                    {currentStep === 1 && (
-                        <div>
-                            <h2 style={{ fontSize: 18, marginBottom: 20 }}>Academic Information</h2>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 20 }}>
-                                <input type="text" placeholder="Institution Name" className="input-js" value={academicInfo.institution} onChange={e => setAcademicInfo({...academicInfo, institution: e.target.value})} />
-                                <input type="text" placeholder="Course Name (e.g. MCA)" className="input-js" value={academicInfo.course} onChange={e => setAcademicInfo({...academicInfo, course: e.target.value})} />
-                                <select className="input-js" value={academicInfo.category} onChange={e => setAcademicInfo({...academicInfo, category: e.target.value})}>
-                                    <option>General</option>
-                                    <option>OBC</option>
-                                    <option>SC/ST</option>
-                                </select>
+                            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: 16, borderRadius: 8, fontSize: 13, marginBottom: 24 }}>
+                                <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: 8 }}>Scheme Specifications:</div>
+                                <div>• <strong>Type:</strong> {schemeType === 'LOAN' ? 'Subsidized Education Loan' : 'Post-Matric Merit Scholarship'}</div>
+                                <div>• <strong>Target Level:</strong> Undergraduate & Technical Courses</div>
+                                <div>• <strong>Source:</strong> DEMO Prototype Scheme (SamadhanPath Interoperability Engine)</div>
                             </div>
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}>Back</button>
-                                <button onClick={() => setCurrentStep(2)} className="btn-primary">Save & Continue</button>
-                            </div>
-                        </div>
-                    )}
 
-                    {currentStep === 2 && (
-                        <div>
-                            <h2 style={{ fontSize: 18, marginBottom: 20 }}>Checking Connected Systems</h2>
-                            <p style={{ fontSize: 14, color: '#64748b', marginBottom: 20 }}>SamadhanPath Gateway is checking if the required documents already exist in other department databases.</p>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 30 }}>
-                                <div style={{ padding: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Academic Record (Education)</span> <span style={{ color: '#059669', fontWeight: 600 }}>✓ Found</span>
-                                </div>
-                                <div style={{ padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Income Eligibility (Public Services)</span> <span style={{ color: '#d97706', fontWeight: 600 }}>Consent Required</span>
-                                </div>
+                            <div style={{ background: selectionConfirmed ? '#ecfdf5' : '#fffbeb', padding: 16, borderRadius: 8, border: selectionConfirmed ? '1px solid #a7f3d0' : '1px solid #fde68a', marginBottom: 24 }}>
+                                <label style={{ display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={selectionConfirmed} onChange={e => setSelectionConfirmed(e.target.checked)} style={{ width: 18, height: 18 }} />
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: selectionConfirmed ? '#065f46' : '#92400e' }}>
+                                        "I want to apply for this {schemeType === 'LOAN' ? 'loan' : 'scholarship'}."
+                                    </span>
+                                </label>
                             </div>
-                            
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}>Back</button>
-                                <button onClick={() => setCurrentStep(3)} className="btn-primary">Proceed to Consent</button>
-                            </div>
-                        </div>
-                    )}
 
-                    {currentStep === 3 && (
-                        <div>
-                            <h2 style={{ fontSize: 18, marginBottom: 20 }}>Data Access Request</h2>
-                            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: 20, borderRadius: 8, marginBottom: 20 }}>
-                                <p style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>Requesting Department: Education Department</p>
-                                <p style={{ margin: '0 0 12px 0', fontSize: 14 }}><strong>Source Department:</strong> Public Services</p>
-                                <p style={{ margin: '0 0 16px 0', fontSize: 14 }}><strong>Purpose:</strong> Scholarship Eligibility Verification</p>
-                                
-                                <hr style={{ borderColor: '#fca5a5', margin: '16px 0' }} />
-                                <p style={{ margin: '0 0 8px 0', fontSize: 14, fontWeight: 600 }}>Information Requested:</p>
-                                <ul style={{ margin: 0, paddingLeft: 20, fontSize: 14, color: '#991b1b' }}>
-                                    <li>Income Eligibility Status</li>
-                                    <li>Domicile Status</li>
-                                </ul>
-                            </div>
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}>Deny</button>
-                                <button onClick={handleConsentApproval} className="btn-primary" style={{ background: '#059669', borderColor: '#059669' }}>Allow Data Sharing</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {currentStep === 4 && (
-                        <div style={{ textAlign: 'center', padding: '60px 0' }}>
-                            <div style={{ fontSize: 48, marginBottom: 20 }}>🔄</div>
-                            <h2 style={{ fontSize: 20, marginBottom: 12 }}>API Orchestration in Progress</h2>
-                            <p style={{ color: '#64748b', fontSize: 15 }}>Gateway is routing your signed JWT Consent Token to Public Services...</p>
-                        </div>
-                    )}
-
-                    {currentStep === 5 && (
-                        <div>
-                            <h2 style={{ fontSize: 18, marginBottom: 20 }}>Application Review</h2>
-                            <div style={{ background: '#f8fafc', padding: 20, borderRadius: 8, marginBottom: 24, border: '1px solid #e2e8f0' }}>
-                                <h3 style={{ fontSize: 14, textTransform: 'uppercase', color: '#64748b', marginBottom: 12 }}>Verified Interoperable Data</h3>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14 }}>
-                                    <span>Income Eligibility</span>
-                                    <span style={{ color: '#059669', fontWeight: 600 }}>✓ Verified (Public Services)</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 14 }}>
-                                    <span>Consent Status</span>
-                                    <span style={{ color: '#059669', fontWeight: 600 }}>✓ Active</span>
-                                </div>
-                            </div>
-                            <button onClick={submitApplication} className="btn-primary" disabled={isSubmitting} style={{ width: '100%', fontSize: 16, padding: '14px' }}>
-                                {isSubmitting ? 'Submitting to Education DB...' : 'Submit Scholarship Application'}
+                            <button
+                                disabled={!selectionConfirmed}
+                                onClick={() => setCurrentStep(1)}
+                                style={{ padding: '12px 24px', background: selectionConfirmed ? '#2563eb' : '#94a3b8', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: selectionConfirmed ? 'pointer' : 'not-allowed' }}
+                            >
+                                Save Selection & Continue →
                             </button>
                         </div>
                     )}
-                    
-                    {currentStep === 6 && (
-                         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                         <div style={{ fontSize: 40, marginBottom: 20 }}>✅</div>
-                         <h2 style={{ fontSize: 18, marginBottom: 12 }}>Processing Complete</h2>
-                         <p style={{ color: '#64748b', fontSize: 14 }}>Redirecting to Unified Tracker...</p>
-                     </div>
+
+                    {/* STEP 2: PERSONAL INFORMATION (AUTO-FILLED) */}
+                    {currentStep === 1 && (
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 2: Personal Information</h3>
+                                <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
+                                    ✓ Fetched from your existing profile 🔒
+                                </span>
+                            </div>
+
+                            {profile && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, background: '#f8fafc', padding: 20, borderRadius: 8, fontSize: 13, marginBottom: 24, border: '1px solid #e2e8f0' }}>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Full Name</label><div style={{ fontWeight: 600 }}>{profile.name} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Date of Birth</label><div style={{ fontWeight: 600 }}>{profile.dob} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Master ID</label><div style={{ fontWeight: 600 }}>{masterId} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Category</label><div style={{ fontWeight: 600 }}>{profile.category} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>State</label><div style={{ fontWeight: 600 }}>{profile.state} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>District</label><div style={{ fontWeight: 600 }}>{profile.district} 🔒</div></div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
+                            </div>
+                        </div>
                     )}
-                </div>
-            </div>
 
-            {/* RIGHT SIDE - INTEROPERABILITY DASHBOARD (50%) */}
-            <div style={{ flex: '1 1 50%', background: '#0f172a', color: 'white', padding: '60px', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 20, right: 20 }}>
-                    <span style={{ padding: '6px 12px', background: 'rgba(56, 189, 248, 0.1)', color: '#38bdf8', borderRadius: 20, fontSize: 12, fontWeight: 700, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                        INTEROPERABILITY VISUALIZER
-                    </span>
-                </div>
-                
-                <h3 style={{ fontSize: 14, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.1em', marginBottom: 40 }}>
-                    Behind The Scenes: What the Gateway is doing
-                </h3>
+                    {/* STEP 3: EDUCATION INFORMATION (AUTO-FILLED) */}
+                    {currentStep === 2 && (
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 3: Education & Academic Information</h3>
+                                <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
+                                    ✓ Fetched from your existing profile 🔒
+                                </span>
+                            </div>
 
-                <div style={{ 
-                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 16, padding: 32, backdropFilter: 'blur(10px)',
-                    transition: 'all 0.3s ease'
-                }}>
-                    <div style={{ fontSize: 32, marginBottom: 24 }}>💡</div>
-                    <h2 style={{ fontSize: 28, fontWeight: 700, color: '#f8fafc', marginBottom: 16 }}>
-                        {currentExplanation?.title || ''}
-                    </h2>
-                    
-                    <p style={{ fontSize: 18, color: '#cbd5e1', lineHeight: 1.6, marginBottom: 32 }}>
-                        {currentExplanation?.description || ''}
-                    </p>
-                    
-                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: 20, borderRadius: 12, borderLeft: '4px solid #38bdf8' }}>
-                        <h4 style={{ fontSize: 12, textTransform: 'uppercase', color: '#38bdf8', marginBottom: 8, letterSpacing: '0.05em' }}>
-                            Technical Execution
-                        </h4>
-                        <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', fontFamily: 'monospace', lineHeight: 1.5 }}>
-                            {currentExplanation?.tech || ''}
-                        </p>
-                    </div>
-                </div>
-                
-                {/* Visualizer animation graphic depending on step */}
-                <div style={{ marginTop: 40, padding: 20, border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 12, textAlign: 'center', color: '#64748b' }}>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                        {currentStep === 0 && "[ MASTER_DB ] <--- fetch_profile() --- [ GATEWAY ]"}
-                        {currentStep === 1 && "[ UI ] ---> form_data ---> [ GATEWAY_MEMORY ]"}
-                        {currentStep === 2 && "[ EDU_DB ] <--- lookup() --- [ GATEWAY ] --- lookup() ---> [ PUBLIC_SERVICES_DB ]"}
-                        {currentStep === 3 && "[ JWT_ENGINE ] ::: Generating signed_consent_token :::"}
-                        {currentStep === 4 && "[ GATEWAY ] === {jwt_token} ===> [ PUBLIC_SERVICES_DB ]"}
-                        {currentStep === 5 && "Raw Data (₹450,000) => Transformation => Boolean (Eligible: True)"}
-                        {currentStep === 6 && "Writing transaction hash to immutable audit log..."}
-                    </div>
+                            {profile && (
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, background: '#f8fafc', padding: 20, borderRadius: 8, fontSize: 13, marginBottom: 24, border: '1px solid #e2e8f0' }}>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Student ID</label><div style={{ fontWeight: 600 }}>{profile.student_id} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Institution</label><div style={{ fontWeight: 600 }}>{profile.institution} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Course</label><div style={{ fontWeight: 600 }}>{profile.course} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Year / Semester</label><div style={{ fontWeight: 600 }}>{profile.year_semester} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Enrollment Number</label><div style={{ fontWeight: 600 }}>{profile.enrollment_number} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Academic Aggregate</label><div style={{ fontWeight: 600, color: '#059669' }}>{profile.academic_performance}% 🔒</div></div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 4: FINANCIAL INFORMATION (PROMPTS ONLY MISSING INFO) */}
+                    {currentStep === 3 && (
+                        <div>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 4: Financial Information & Missing Details</h3>
+                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+                                Profile fields were auto-filled. Please specify only the missing scheme-specific financial requirements:
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+                                <div>
+                                    <label style={{ fontSize: 13, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>
+                                        {schemeType === 'LOAN' ? 'Loan Amount Requested (₹)' : 'Course Annual Fee (₹)'}
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={formData.loan_amount_requested}
+                                        onChange={e => setFormData({...formData, loan_amount_requested: e.target.value})}
+                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label style={{ fontSize: 13, fontWeight: 600, color: '#334155', display: 'block', marginBottom: 6 }}>
+                                        Bank Account / Direct Benefit Transfer (DBT) Account Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.bank_account}
+                                        onChange={e => setFormData({...formData, bank_account: e.target.value})}
+                                        style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14 }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Save & Continue →</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 5: DOCUMENTS CHECK */}
+                    {currentStep === 4 && (
+                        <div>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 5: Document Vault Verification Status</h3>
+                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+                                We checked your Government Document Vault. Existing documents are auto-linked:
+                            </p>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                                <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <span>Income Certificate (Revenue Dept)</span>
+                                    <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Already Available & Verified</span>
+                                </div>
+                                <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <span>Domicile Certificate (Revenue Dept)</span>
+                                    <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Already Available & Verified</span>
+                                </div>
+                                <div style={{ padding: 12, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <span>Academic HSC Marksheet (State Board)</span>
+                                    <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Already Available & Verified</span>
+                                </div>
+                                <div style={{ padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                                    <span>Bank Account Verification</span>
+                                    <span style={{ color: '#b45309', fontWeight: 700 }}>⚠ Available (Verification Pending via OTP Consent)</span>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(5)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Proceed to Consent →</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 6: DATA SHARING & CONSENT MODAL */}
+                    {currentStep === 5 && (
+                        <div>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 6: Data Sharing Request & Authorization</h3>
+                            
+                            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: 20, borderRadius: 12, marginBottom: 24 }}>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>DATA SHARING REQUEST</div>
+                                <div style={{ fontSize: 13, color: '#334155', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                                    <div><strong>Requester:</strong> Higher Education Department</div>
+                                    <div><strong>Source Dept:</strong> Revenue & Public Services Department</div>
+                                    <div><strong>Purpose:</strong> Education Scheme Eligibility Verification</div>
+                                    <div><strong>Duration:</strong> Single Session Application Use</div>
+                                </div>
+
+                                <div style={{ background: 'white', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13 }}>
+                                    <div style={{ fontWeight: 600, color: '#059669', marginBottom: 6 }}>Requested Fields:</div>
+                                    <div>✓ Income Eligibility Flag</div>
+                                    <div>✓ Domicile Validity Status</div>
+                                    <div>✓ Academic Marksheet Verification</div>
+
+                                    <div style={{ fontWeight: 600, color: '#dc2626', marginTop: 12, marginBottom: 6 }}>Not Requested (Data Minimization Enforced):</div>
+                                    <div>✗ Raw annual income figures or complete financial statements</div>
+                                    <div>✗ Detailed personal banking transaction history</div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
+                                <button onClick={() => { handleSendOtp(); setCurrentStep(6); }} style={{ padding: '10px 24px', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Authorize & Send OTP →</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 7: VERIFICATION & OTP */}
+                    {currentStep === 6 && (
+                        <div>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 7: Aadhaar Mobile OTP Verification</h3>
+                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+                                An OTP was sent to your registered mobile ending in <strong>4491</strong>.
+                            </p>
+
+                            <div style={{ background: '#f0fdf4', padding: 16, borderRadius: 8, border: '1px solid #bbf7d0', marginBottom: 20, fontSize: 13, color: '#166534' }}>
+                                💡 <strong>DEMO OTP MODE:</strong> Enter demo code <strong style={{ fontSize: 16, color: '#15803d' }}>123456</strong> to verify instant authorization.
+                            </div>
+
+                            <div style={{ marginBottom: 24 }}>
+                                <label style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>Enter 6-Digit OTP:</label>
+                                <input
+                                    type="text"
+                                    maxLength={6}
+                                    value={otpInput}
+                                    onChange={e => setOtpInput(e.target.value)}
+                                    style={{ padding: '12px 16px', fontSize: 20, letterSpacing: 8, fontWeight: 700, textAlign: 'center', width: 220, borderRadius: 8, border: '2px solid #2563eb' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(5)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={handleVerifyOtp} style={{ padding: '12px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Verify OTP & Transform Data →</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 8: REVIEW */}
+                    {currentStep === 7 && (
+                        <div>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 8: Review Final Application</h3>
+                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
+                                Please review your application before final submission to the Education Department.
+                            </p>
+
+                            <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 13, marginBottom: 24 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                                    <div><strong>Applicant:</strong> {profile?.name}</div>
+                                    <div><strong>Master ID:</strong> {masterId}</div>
+                                    <div><strong>Scheme:</strong> {defaultSchemeName}</div>
+                                    <div><strong>Amount Requested:</strong> ₹ {formData.loan_amount_requested}</div>
+                                    <div><strong>Consent ID:</strong> <span style={{ fontFamily: 'monospace', color: '#2563eb' }}>{consentToken?.consentId}</span></div>
+                                    <div><strong>Verification Status:</strong> <span style={{ color: '#059669', fontWeight: 700 }}>✓ Verified via Gateway CDM</span></div>
+                                </div>
+
+                                {cdmData && (
+                                    <div style={{ background: '#1e293b', color: '#e2e8f0', padding: 12, borderRadius: 6, fontSize: 11, fontFamily: 'monospace' }}>
+                                        <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: 4 }}>Common Data Model Output (Data Minimization):</div>
+                                        <div>verificationType: "{cdmData.verificationType}"</div>
+                                        <div>eligibilityStatus: "{cdmData.eligibilityStatus}"</div>
+                                        <div>issuer: "{cdmData.issuer}"</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 12 }}>
+                                <button onClick={() => setCurrentStep(6)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button
+                                    disabled={isSubmitting}
+                                    onClick={handleSubmitApplication}
+                                    style={{ padding: '12px 28px', background: '#059669', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                                >
+                                    {isSubmitting ? 'Submitting to Gateway...' : 'Submit Application →'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* STEP 9: SUBMITTED SUCCESS */}
+                    {currentStep === 8 && (
+                        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                            <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
+                            <h3 style={{ fontSize: 22, color: '#059669', margin: '0 0 8px' }}>Application Submitted Successfully!</h3>
+                            <p style={{ fontSize: 14, color: '#475569', marginBottom: 20 }}>
+                                Your application has been registered in the interoperable government workflow database.
+                            </p>
+
+                            <div style={{ background: '#f0fdf4', border: '2px dashed #059669', padding: 20, borderRadius: 12, display: 'inline-block', marginBottom: 24 }}>
+                                <div style={{ fontSize: 12, color: '#166534' }}>UNIFIED APPLICATION TRACKING ID</div>
+                                <div style={{ fontSize: 26, fontWeight: 800, color: '#15803d', fontFamily: 'monospace', letterSpacing: 2 }}>{submittedAppId}</div>
+                            </div>
+
+                            <div>
+                                <button
+                                    onClick={() => navigate(`/tracking/${submittedAppId}`)}
+                                    style={{ padding: '12px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+                                >
+                                    Track Live Stage Progression →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>

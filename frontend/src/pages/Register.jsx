@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser, loginUser } from '../services/api';
+import { registerUser, loginUser, sendOtp, verifyOtp } from '../services/api';
 import { motion } from 'framer-motion';
 
 const Register = () => {
@@ -19,6 +19,13 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showDigilockerModal, setShowDigilockerModal] = useState(false);
     const [digilockerStep, setDigilockerStep] = useState(1);
+    
+    // OTP State variables
+    const [aadhaarOrMobile, setAadhaarOrMobile] = useState('7717465014');
+    const [enteredOtp, setEnteredOtp] = useState('');
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [otpError, setOtpError] = useState('');
+    const [smsBanner, setSmsBanner] = useState(null);
     const navigate = useNavigate();
 
     const containsPersonalInfo = (p) => {
@@ -265,7 +272,7 @@ const Register = () => {
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                        style={{ background: 'white', borderRadius: 16, width: 400, padding: 32, position: 'relative' }}
+                        style={{ background: 'white', borderRadius: 16, width: 440, padding: 32, position: 'relative' }}
                     >
                         <button onClick={() => setShowDigilockerModal(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}>×</button>
                         
@@ -274,30 +281,129 @@ const Register = () => {
                             <h3 style={{ margin: 0, fontSize: 20 }}>DigiLocker Authentication</h3>
                         </div>
 
+                        {smsBanner && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{
+                                    padding: '12px 14px',
+                                    borderRadius: 10,
+                                    background: '#0f172a',
+                                    border: '1px solid #3b82f6',
+                                    color: '#f8fafc',
+                                    marginBottom: 16
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#60a5fa', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        📲 Twilio Verify OTP Sent
+                                    </span>
+                                    <span style={{ fontSize: 11, opacity: 0.8 }}>Just now</span>
+                                </div>
+                                <div style={{ fontSize: 13, color: '#e2e8f0', lineHeight: 1.5 }}>
+                                    A 6-digit verification code has been dispatched directly to your mobile phone number <strong>+91 {smsBanner.mobile}</strong>. Please check your SMS/WhatsApp messages and enter the OTP below.
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {otpError && (
+                            <div style={{ padding: '10px 14px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', fontSize: 13, marginBottom: 16, fontWeight: 600 }}>
+                                ⚠️ {otpError}
+                            </div>
+                        )}
+
                         {digilockerStep === 1 ? (
                             <div>
-                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
-                                    Enter your Aadhaar or Mobile Number linked with DigiLocker.
-                                </p>
-                                <input type="text" placeholder="Aadhaar / Mobile Number" className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: 2 }} />
-                                <button onClick={() => setDigilockerStep(2)} className="btn-js" style={{ width: '100%', background: '#3b82f6' }}>Send OTP</button>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
+                                        Enter 12-Digit Aadhaar Number OR Registered Mobile Number
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Aadhaar Number / Mobile (e.g. 7717465014)" 
+                                        value={aadhaarOrMobile}
+                                        onChange={e => setAadhaarOrMobile(e.target.value)}
+                                        className="input-js" 
+                                        style={{ textAlign: 'center', letterSpacing: 2, fontSize: 16, fontWeight: 600 }} 
+                                    />
+                                    <span style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block', textAlign: 'center' }}>
+                                        📲 Real OTP will be dispatched via Twilio Verify to +91 {aadhaarOrMobile.trim() || '7717465014'}
+                                    </span>
+                                </div>
+
+                                <button 
+                                    onClick={async () => {
+                                        const targetInput = aadhaarOrMobile.trim() || '7717465014';
+                                        const cleanNum = targetInput.replace(/\D/g, '') || '7717465014';
+                                        setOtpLoading(true);
+                                        setOtpError('');
+                                        try {
+                                            await sendOtp(targetInput);
+                                            setDigilockerStep(2);
+                                            setSmsBanner({ mobile: cleanNum });
+                                        } catch (err) {
+                                            setOtpError(err.response?.data?.error || 'Failed to send Twilio OTP.');
+                                        } finally {
+                                            setOtpLoading(false);
+                                        }
+                                    }} 
+                                    disabled={otpLoading}
+                                    className="btn-js" 
+                                    style={{ width: '100%', background: '#3b82f6', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                                >
+                                    📲 {otpLoading ? 'Sending Real OTP...' : 'Send Real OTP to My Phone'}
+                                </button>
                             </div>
                         ) : digilockerStep === 2 ? (
                             <div>
-                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 24, textAlign: 'center' }}>
-                                    Enter the 6-digit OTP sent to your registered mobile number.
+                                <p style={{ color: '#475569', fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
+                                    Enter 6-digit OTP sent to your phone <strong>(+91 {aadhaarOrMobile})</strong>.
                                 </p>
-                                <input type="text" placeholder="● ● ● ● ● ●" className="input-js" style={{ marginBottom: 16, textAlign: 'center', letterSpacing: 8, fontSize: 20 }} />
-                                <button onClick={() => {
-                                    setDigilockerStep(1);
-                                    setShowDigilockerModal(false);
-                                    setName('Ravi Kumar (Verified)');
-                                    setDob('1990-05-15');
-                                    setMobile('9876543210');
-                                    setAddress('Sector 12, Vikas Nagar');
-                                    setDistrict('Lucknow');
-                                    setState('Uttar Pradesh');
-                                }} className="btn-js" style={{ width: '100%', background: '#10b981' }}>Verify & Fetch Details</button>
+                                <div style={{ marginBottom: 16 }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="● ● ● ● ● ●" 
+                                        maxLength={6}
+                                        value={enteredOtp}
+                                        onChange={e => setEnteredOtp(e.target.value)}
+                                        className="input-js" 
+                                        style={{ textAlign: 'center', letterSpacing: 8, fontSize: 22, fontWeight: 700 }} 
+                                    />
+                                </div>
+                                <button 
+                                    onClick={async () => {
+                                        const targetInput = aadhaarOrMobile.trim() || '7717465014';
+                                        if (!enteredOtp || enteredOtp.length < 4) {
+                                            setOtpError('Please enter the 6-digit verification code.');
+                                            return;
+                                        }
+                                        setOtpLoading(true);
+                                        setOtpError('');
+                                        try {
+                                            await verifyOtp(targetInput, enteredOtp);
+                                            setShowDigilockerModal(false);
+                                            setDigilockerStep(1);
+                                            setName('Verified Citizen (DigiLocker Aadhaar)');
+                                            setEmail(prev => prev || `citizen_${targetInput}@jansetu.ai`);
+                                            setDob('1994-06-18');
+                                            setMobile(targetInput);
+                                            setAddress('Vikas Nagar, Sector 4');
+                                            setDistrict('Lucknow');
+                                            setState('Uttar Pradesh');
+                                            setSmsBanner(null);
+                                            setEnteredOtp('');
+                                        } catch (err) {
+                                            setOtpError(err.response?.data?.error || 'Incorrect OTP entered.');
+                                        } finally {
+                                            setOtpLoading(false);
+                                        }
+                                    }} 
+                                    disabled={otpLoading}
+                                    className="btn-js" 
+                                    style={{ width: '100%', background: '#10b981', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1 }}
+                                >
+                                    {otpLoading ? 'Verifying Twilio OTP...' : 'Verify OTP & Fetch Aadhaar Details'}
+                                </button>
                             </div>
                         ) : null}
                     </motion.div>

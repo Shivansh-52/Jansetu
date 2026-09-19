@@ -69,6 +69,7 @@ from routes.service_routes import service_bp
 app.register_blueprint(service_bp, url_prefix='/api/services')
 from routes.education_routes import education_bp
 app.register_blueprint(education_bp, url_prefix='/api/education')
+app.register_blueprint(education_bp, url_prefix='/api/proxy/education', name='education_proxy')
 
 # Health check endpoint for Uptime Robot
 @app.route('/api/health')

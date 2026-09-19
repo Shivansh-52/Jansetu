@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getDeptOfficerDashboard, getDeptComplaints, getDeptWorkers, assignComplaint, reassignComplaint } from '../services/api';
-import { Link } from 'react-router-dom';
+import { getDeptOfficerDashboard, getDeptComplaints, getDeptWorkers, assignComplaint, reassignComplaint, API_URL } from '../services/api';
+import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DeptOfficerDashboard = () => {
@@ -8,12 +8,16 @@ const DeptOfficerDashboard = () => {
     const [stats, setStats] = useState({});
     const [complaints, setComplaints] = useState([]);
     const [workers, setWorkers] = useState([]);
+    const [educationApps, setEducationApps] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('unassigned');
-    const [assignModal, setAssignModal] = useState(null); // complaint object or null
+    const [activeTab, setActiveTab] = useState('education_apps'); // education_apps, unassigned, assigned, in_progress, resolved
+    const [assignModal, setAssignModal] = useState(null);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
+
+    // Remarks state for officer approval
+    const [officerRemarks, setOfficerRemarks] = useState('Income and academic documents verified via Gateway CDM. Approved.');
 
     useEffect(() => {
         const u = localStorage.getItem('user');
@@ -21,22 +25,29 @@ const DeptOfficerDashboard = () => {
     }, []);
 
     useEffect(() => {
-        if (user?.department) fetchAll();
+        fetchAll();
     }, [user]);
 
     const fetchAll = async () => {
         setLoading(true);
         try {
+            const dept = user?.department || 'Education';
             const [dashData, compData, workData] = await Promise.all([
-                getDeptOfficerDashboard(user.department),
-                getDeptComplaints(user.department),
-                getDeptWorkers(user.department)
+                getDeptOfficerDashboard(dept).catch(() => ({ stats: {} })),
+                getDeptComplaints(dept).catch(() => []),
+                getDeptWorkers(dept).catch(() => [])
             ]);
             setStats(dashData.stats || {});
             setComplaints(compData || []);
             setWorkers(workData || []);
+
+            // Fetch Education Applications
+            const eduRes = await axios.get(`${API_URL}/education/officer/applications`).catch(() => null);
+            if (eduRes && eduRes.data) {
+                setEducationApps(eduRes.data.applications || []);
+            }
         } catch (err) {
-            console.error('Failed to load:', err);
+            console.error('Failed to load dashboard:', err);
         } finally {
             setLoading(false);
         }
@@ -46,7 +57,7 @@ const DeptOfficerDashboard = () => {
         if (!assignModal || !selectedWorker) return;
         setActionLoading(true);
         try {
-            await assignComplaint(assignModal._id, selectedWorker, user.id);
+            await assignComplaint(assignModal._id, selectedWorker, user?.id || 'officer-01');
             setSuccessMsg(`Assigned to ${workers.find(w => w._id === selectedWorker)?.name || 'worker'}`);
             setAssignModal(null);
             setSelectedWorker('');
@@ -59,26 +70,28 @@ const DeptOfficerDashboard = () => {
         }
     };
 
-    const handleReassign = async (complaint) => {
-        if (!selectedWorker) return;
+    const handleUpdateEducationAppStatus = async (appId, newStatus) => {
         setActionLoading(true);
         try {
-            await reassignComplaint(complaint._id, selectedWorker, user.id);
-            setSuccessMsg('Reassigned successfully');
-            setAssignModal(null);
-            setSelectedWorker('');
-            setTimeout(() => setSuccessMsg(''), 3000);
-            fetchAll();
+            const res = await axios.post(`${API_URL}/education/officer/update-status`, {
+                application_id: appId,
+                status: newStatus,
+                remarks: officerRemarks,
+                officer_id: user?.name || 'Education Officer'
+            });
+            if (res.data.success) {
+                setSuccessMsg(`Application ${appId} updated to ${newStatus}`);
+                setTimeout(() => setSuccessMsg(''), 3000);
+                fetchAll();
+            }
         } catch (err) {
-            alert(err.response?.data?.error || 'Reassignment failed');
+            alert('Failed to update application status');
         } finally {
             setActionLoading(false);
         }
     };
 
-
-
-    const filtered = complaints.filter(c => {
+    const filteredComplaints = complaints.filter(c => {
         if (activeTab === 'unassigned') return !c.worker_id || c.status === 'Pending';
         if (activeTab === 'assigned') return c.status === 'Assigned';
         if (activeTab === 'in_progress') return c.status === 'In Progress';
@@ -87,264 +100,146 @@ const DeptOfficerDashboard = () => {
     });
 
     const statusColor = (s) => {
-        const map = { Pending: '#ff9800', Assigned: '#2196f3', 'In Progress': '#ff6f00', Resolved: '#4caf50', Reopened: '#ff6f00' };
+        const map = { Pending: '#ff9800', Assigned: '#2196f3', 'In Progress': '#ff6f00', Resolved: '#4caf50', Approved: '#10b981', Rejected: '#ef4444' };
         return map[s] || '#888';
     };
 
-    const priorityColor = (p) => {
-        const map = { High: '#f44336', Medium: '#ff9800', Low: '#4caf50' };
-        return map[p] || '#888';
-    };
-
-    if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                style={{ width: 40, height: 40, border: '3px solid #e0e0e0', borderTopColor: 'var(--accent)', borderRadius: '50%' }} />
-        </div>
-    );
-
     return (
-        <div className="page-bg" style={{ minHeight: '100vh', padding: '100px 20px 40px' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', padding: '30px 20px' }}>
             <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-                {/* Header */}
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
-                        <div style={{
-                            width: 48, height: 48, borderRadius: 14,
-                            background: 'linear-gradient(135deg, #2B6BFF, #1a4fd4)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 22, color: 'white'
-                        }}>🏗️</div>
-                        <div>
-                            <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                                Department Officer
-                            </h1>
-                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
-                                {user?.name} · {user?.department} Department
-                            </p>
-                        </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, #2B6BFF, #1a4fd4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: 'white' }}>
+                        🏛️
                     </div>
-                </motion.div>
+                    <div>
+                        <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                            Education & Department Officer Portal
+                        </h1>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+                            Review & sanction interoperable Education Loans, Scholarships & Grievances
+                        </p>
+                    </div>
+                </div>
 
                 {/* Success Toast */}
                 <AnimatePresence>
                     {successMsg && (
-                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                            style={{
-                                position: 'fixed', top: 80, right: 20, zIndex: 1000,
-                                background: '#4caf50', color: '#fff', padding: '12px 24px',
-                                borderRadius: 12, fontWeight: 600, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-                            }}>
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ position: 'fixed', top: 80, right: 20, zIndex: 1000, background: '#10b981', color: '#fff', padding: '12px 24px', borderRadius: 12, fontWeight: 600, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
                             ✅ {successMsg}
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-                {/* Stats Cards */}
-                <div style={{
-                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: 16, marginTop: 24, marginBottom: 32
-                }}>
-                    {[
-                        { label: 'Total', value: stats.total || 0, color: '#2B6BFF', icon: '📋' },
-                        { label: 'Unassigned', value: stats.unassigned || 0, color: '#ff9800', icon: '⏳' },
-                        { label: 'Assigned', value: stats.assigned || 0, color: '#2196f3', icon: '📌' },
-                        { label: 'In Progress', value: stats.in_progress || 0, color: '#ff6f00', icon: '🔧' },
-                        { label: 'Resolved', value: stats.resolved || 0, color: '#4caf50', icon: '✅' }
-                    ].map((s, i) => (
-                        <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.08 }} className="glass-card"
-                            style={{ padding: 20, borderRadius: 16, textAlign: 'center', borderLeft: `4px solid ${s.color}` }}>
-                            <div style={{ fontSize: 24 }}>{s.icon}</div>
-                            <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>{s.label}</div>
-                        </motion.div>
-                    ))}
+                {/* METRICS */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+                    <div style={{ background: 'white', padding: 20, borderRadius: 12, borderLeft: '4px solid #2563eb' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#2563eb' }}>{educationApps.length}</div>
+                        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Education Applications</div>
+                    </div>
+                    <div style={{ background: 'white', padding: 20, borderRadius: 12, borderLeft: '4px solid #f59e0b' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>{educationApps.filter(a => a.status === 'Application Submitted' || a.current_stage === 'Department Review').length}</div>
+                        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Pending Review</div>
+                    </div>
+                    <div style={{ background: 'white', padding: 20, borderRadius: 12, borderLeft: '4px solid #10b981' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981' }}>{educationApps.filter(a => a.status === 'Approved').length}</div>
+                        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Sanctioned / Approved</div>
+                    </div>
+                    <div style={{ background: 'white', padding: 20, borderRadius: 12, borderLeft: '4px solid #ef4444' }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: '#ef4444' }}>{educationApps.filter(a => a.status === 'Rejected').length}</div>
+                        <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Rejected</div>
+                    </div>
                 </div>
 
-                {/* Workers Panel */}
-                <div className="glass-card" style={{ padding: 20, borderRadius: 16, marginBottom: 24 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
-                        👷 Workers in {user?.department} Department
-                    </h3>
-                    {workers.length === 0 ? (
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>No workers registered in this department yet.</p>
-                    ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
-                            {workers.map(w => (
-                                <div key={w._id} style={{
-                                    padding: 14, borderRadius: 12, background: 'var(--bg-secondary)',
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                                }}>
-                                    <div>
-                                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>{w.name}</div>
-                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{w.email}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{w.active_tasks}</div>
-                                        <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Active Tasks</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+                {/* NAVIGATION TABS */}
+                <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
                     {[
-                        { key: 'unassigned', label: `Unassigned (${complaints.filter(c => !c.worker_id || c.status === 'Pending').length})` },
-                        { key: 'assigned', label: `Assigned (${complaints.filter(c => c.status === 'Assigned').length})` },
-                        { key: 'in_progress', label: `In Progress (${complaints.filter(c => c.status === 'In Progress').length})` },
-                        { key: 'resolved', label: `Resolved (${complaints.filter(c => c.status === 'Resolved').length})` },
-                        { key: 'all', label: `All (${complaints.length})` }
+                        { key: 'education_apps', label: `🎓 Education Applications (${educationApps.length})` },
+                        { key: 'unassigned', label: `📋 Grievances (${complaints.length})` }
                     ].map(t => (
-                        <button key={t.key} onClick={() => setActiveTab(t.key)}
-                            style={{
-                                padding: '8px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                                fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
-                                background: activeTab === t.key ? 'var(--accent)' : 'var(--bg-secondary)',
-                                color: activeTab === t.key ? '#fff' : 'var(--text-secondary)'
-                            }}>
+                        <button key={t.key} onClick={() => setActiveTab(t.key)} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, background: activeTab === t.key ? '#2563eb' : 'white', color: activeTab === t.key ? 'white' : '#64748b' }}>
                             {t.label}
                         </button>
                     ))}
                 </div>
 
-                {/* Complaints List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {filtered.length === 0 ? (
-                        <div className="glass-card" style={{ padding: 40, borderRadius: 16, textAlign: 'center' }}>
-                            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-                            <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>No complaints in this category</p>
+                {/* TAB 1: EDUCATION APPLICATIONS REVIEW */}
+                {activeTab === 'education_apps' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ background: 'white', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0', fontSize: 13 }}>
+                            <label style={{ fontWeight: 600, color: '#334155', display: 'block', marginBottom: 4 }}>Officer Decision Remarks:</label>
+                            <input
+                                type="text"
+                                value={officerRemarks}
+                                onChange={e => setOfficerRemarks(e.target.value)}
+                                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 13 }}
+                            />
                         </div>
-                    ) : (
-                        filtered.map((c, i) => (
-                            <motion.div key={c._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.03 }} className="glass-card"
-                                style={{ padding: 18, borderRadius: 14, borderLeft: `4px solid ${statusColor(c.status)}` }}>
+
+                        {educationApps.map(app => (
+                            <div key={app.applicationId} style={{ background: 'white', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', borderLeft: `4px solid ${statusColor(app.status)}` }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-                                    <div style={{ flex: 1, minWidth: 200 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--accent)' }}>
-                                                {c.ref_id || c._id.slice(-8)}
+                                    <div>
+                                        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 6 }}>
+                                            <span style={{ fontWeight: 800, fontSize: 16, color: '#2563eb', fontFamily: 'monospace' }}>{app.applicationId}</span>
+                                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 12, background: statusColor(app.status) + '18', color: statusColor(app.status), fontWeight: 700 }}>
+                                                {app.status}
                                             </span>
-                                            <span style={{
-                                                fontSize: 11, padding: '2px 10px', borderRadius: 20,
-                                                background: statusColor(c.status) + '18', color: statusColor(c.status), fontWeight: 600
-                                            }}>
-                                                {c.status}
-                                            </span>
-                                            <span style={{
-                                                fontSize: 11, padding: '2px 10px', borderRadius: 20,
-                                                background: priorityColor(c.priority) + '18', color: priorityColor(c.priority), fontWeight: 600
-                                            }}>
-                                                {c.priority}
-                                            </span>
+                                            <span style={{ fontSize: 11, color: '#64748b' }}>Master ID: <strong>{app.master_id}</strong></span>
                                         </div>
-                                        <p style={{ fontSize: 13, color: 'var(--text-primary)', margin: '4px 0', lineHeight: 1.5 }}>
-                                            {c.complaint_text?.slice(0, 120)}{c.complaint_text?.length > 120 ? '...' : ''}
-                                        </p>
-                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
-                                            {c.category} · {new Date(c.created_at).toLocaleDateString()}
-                                            {c.worker_name && <span> · 👷 {c.worker_name}</span>}
+                                        <h3 style={{ fontSize: 16, margin: '4px 0', color: '#0f172a' }}>{app.scheme_name}</h3>
+                                        <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                                            Submitted: {app.submitted_at_formatted || 'Recently'} | Consent Token: <span style={{ fontFamily: 'monospace' }}>{app.consent_id}</span>
                                         </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                                        {/* Manual assign — only shown when auto-assignment failed (no available workers) */}
-                                        {(!c.worker_id || c.status === 'Pending' || c.status === 'Reopened') && (
-                                            <button onClick={() => { setAssignModal(c); setSelectedWorker(''); }}
-                                                style={{
-                                                    padding: '8px 16px', borderRadius: 10, border: 'none',
-                                                    background: 'var(--accent)', color: '#fff', fontWeight: 600,
-                                                    fontSize: 13, cursor: 'pointer'
-                                                }}>
-                                                📌 Assign Manually
-                                            </button>
-                                        )}
-                                        {c.worker_id && c.status !== 'Resolved' && (
-                                            <button onClick={() => { setAssignModal({ ...c, isReassign: true }); setSelectedWorker(''); }}
-                                                style={{
-                                                    padding: '8px 16px', borderRadius: 10, border: '1px solid var(--accent)',
-                                                    background: 'transparent', color: 'var(--accent)', fontWeight: 600,
-                                                    fontSize: 13, cursor: 'pointer'
-                                                }}>
-                                                🔄 Reassign
-                                            </button>
+
+                                        {app.verification_summary && (
+                                            <div style={{ background: '#f8fafc', padding: 10, borderRadius: 6, fontSize: 12, marginTop: 10, display: 'flex', gap: 16 }}>
+                                                <span style={{ color: '#059669' }}>✓ Identity Verified</span>
+                                                <span style={{ color: '#059669' }}>✓ Revenue API Income Verified</span>
+                                                <span style={{ color: '#059669' }}>✓ CDM Transformed</span>
+                                            </div>
                                         )}
                                     </div>
+
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={() => handleUpdateEducationAppStatus(app.applicationId, 'Approved')}
+                                            style={{ padding: '8px 16px', background: '#10b981', color: 'white', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                                        >
+                                            ✓ Approve Application
+                                        </button>
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={() => handleUpdateEducationAppStatus(app.applicationId, 'Additional Information Required')}
+                                            style={{ padding: '8px 16px', background: '#f59e0b', color: 'white', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                                        >
+                                            ⚠ Request Info
+                                        </button>
+                                        <button
+                                            disabled={actionLoading}
+                                            onClick={() => handleUpdateEducationAppStatus(app.applicationId, 'Rejected')}
+                                            style={{ padding: '8px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                                        >
+                                            ✗ Reject
+                                        </button>
+                                    </div>
                                 </div>
-                            </motion.div>
-                        ))
-                    )}
-                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                {/* Assign Modal */}
-                <AnimatePresence>
-                    {assignModal && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            style={{
-                                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center',
-                                justifyContent: 'center', zIndex: 999, padding: 20
-                            }}
-                            onClick={() => setAssignModal(null)}>
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}
-                                style={{
-                                    background: 'var(--bg-primary)', borderRadius: 20, padding: 28,
-                                    maxWidth: 450, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
-                                }}>
-                                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>
-                                    {assignModal.isReassign ? '🔄 Reassign Complaint' : '📌 Assign Complaint'}
-                                </h3>
-                                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
-                                    {assignModal.ref_id} — {assignModal.complaint_text?.slice(0, 80)}...
-                                </p>
-
-                                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>
-                                    Select Worker
-                                </label>
-                                <select value={selectedWorker} onChange={e => setSelectedWorker(e.target.value)}
-                                    style={{
-                                        width: '100%', padding: '12px 16px', borderRadius: 12,
-                                        border: '1px solid var(--border-color)', fontSize: 14,
-                                        background: 'var(--bg-secondary)', color: 'var(--text-primary)',
-                                        marginBottom: 20, outline: 'none'
-                                    }}>
-                                    <option value="">— Choose a worker —</option>
-                                    {workers.map(w => (
-                                        <option key={w._id} value={w._id}>
-                                            {w.name} ({w.active_tasks} active tasks)
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <div style={{ display: 'flex', gap: 12 }}>
-                                    <button onClick={() => setAssignModal(null)}
-                                        style={{
-                                            flex: 1, padding: '12px', borderRadius: 12, border: '1px solid var(--border-color)',
-                                            background: 'transparent', color: 'var(--text-secondary)', fontWeight: 600,
-                                            fontSize: 14, cursor: 'pointer'
-                                        }}>
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => assignModal.isReassign ? handleReassign(assignModal) : handleAssign()}
-                                        disabled={!selectedWorker || actionLoading}
-                                        style={{
-                                            flex: 1, padding: '12px', borderRadius: 12, border: 'none',
-                                            background: selectedWorker ? 'var(--accent)' : '#ccc', color: '#fff',
-                                            fontWeight: 600, fontSize: 14, cursor: selectedWorker ? 'pointer' : 'not-allowed',
-                                            opacity: actionLoading ? 0.7 : 1
-                                        }}>
-                                        {actionLoading ? 'Processing...' : assignModal.isReassign ? 'Reassign' : 'Assign'}
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* TAB 2: GRIEVANCES */}
+                {activeTab === 'unassigned' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {complaints.map(c => (
+                            <div key={c._id} style={{ background: 'white', padding: 16, borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                                <div style={{ fontWeight: 700 }}>{c.ref_id || c._id}</div>
+                                <p style={{ margin: '4px 0', fontSize: 13 }}>{c.complaint_text}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

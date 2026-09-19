@@ -58,6 +58,16 @@ export const registerUser = async (userData) => {
     return response.data;
 };
 
+export const sendOtp = async (aadhaarOrMobile) => {
+    const response = await api.post('/auth/send-otp', { aadhaar_or_mobile: aadhaarOrMobile });
+    return response.data;
+};
+
+export const verifyOtp = async (aadhaarOrMobile, otpCode) => {
+    const response = await api.post('/auth/verify-otp', { aadhaar_or_mobile: aadhaarOrMobile, otp_code: otpCode });
+    return response.data;
+};
+
 export const submitComplaint = async (formData) => {
     const token = localStorage.getItem('token');
     const headers = {};

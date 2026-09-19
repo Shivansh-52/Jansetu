@@ -222,8 +222,17 @@ def login():
                 'role': 'citizen',
                 'department': 'Civic Citizen',
                 'district': 'Lucknow',
-                'master_id': 'SP-MH-000001',
+                'master_id': 'SP-000001',
                 'passwords': ['citizen123', 'Pass@123', 'Citizen@123', 'admin123', '123456']
+            },
+            'student@jansetu.ai': {
+                'id': 'stu_001',
+                'name': 'Aarav Sharma (Education Student)',
+                'role': 'citizen',
+                'department': 'Education Domain',
+                'district': 'Bhopal',
+                'master_id': 'SP-000001',
+                'passwords': ['student123', 'Pass@123', 'Student@123', 'admin123', '123456']
             },
             'aarav@jansetu.ai': {
                 'id': 'cit_aarav_001',
@@ -231,7 +240,7 @@ def login():
                 'role': 'citizen',
                 'department': 'Civic Citizen',
                 'district': 'Varanasi',
-                'master_id': 'SP-12963072',
+                'master_id': 'SP-000001',
                 'passwords': ['Demo@123', 'admin123', '123456']
             }
         }
