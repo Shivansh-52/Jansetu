@@ -210,6 +210,14 @@ def login():
                 'district': 'Lucknow',
                 'passwords': ['officer123', 'Pass@123', 'Officer@123', 'admin123', '123456']
             },
+            'edu@samadhan.in': {
+                'id': 'off_edu_001',
+                'name': 'Education Verification Officer',
+                'role': 'dept_officer',
+                'department': 'Education',
+                'district': 'Lucknow',
+                'passwords': ['Demo@1234', 'admin123', '123456', 'Pass@123']
+            },
             'worker@jansetu.ai': {
                 'id': 'work_001',
                 'name': 'Ramesh Kumar (Field Worker)',
