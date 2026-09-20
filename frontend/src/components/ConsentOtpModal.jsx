@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import api from '../services/api';
-import { ShieldCheck, ArrowRight, Loader, Info } from 'lucide-react';
 
 const ConsentOtpModal = ({ 
     isOpen, 
