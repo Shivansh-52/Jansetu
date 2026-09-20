@@ -195,38 +195,30 @@ const OfficialAuth = () => {
                             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)', marginBottom: 8 }}>
                                 ⚡ Quick 1-Click Access
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
-                                <button type="button" onClick={() => handleQuickOfficialLogin('gov@jansetu.ai', 'gov123')}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                                <button type="button" onClick={() => handleQuickOfficialLogin('admin@samadhan.in', 'Demo@1234')}
                                     style={{
                                         padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
                                         background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
                                         display: 'flex', alignItems: 'center', gap: 6, color: '#4f46e5'
                                     }}>
-                                    🏛️ Governance
+                                    🏛️ Govt Admin
                                 </button>
-                                <button type="button" onClick={() => handleQuickOfficialLogin('admin@jansetu.ai', 'admin123')}
+                                <button type="button" onClick={() => handleQuickOfficialLogin('edu@samadhan.in', 'Demo@1234')}
                                     style={{
                                         padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
                                         background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
                                         display: 'flex', alignItems: 'center', gap: 6, color: '#059669'
                                     }}>
-                                    🛡️ Admin
+                                    📚 Education Dept
                                 </button>
-                                <button type="button" onClick={() => handleQuickOfficialLogin('contractor@jansetu.ai', 'contractor123')}
+                                <button type="button" onClick={() => handleQuickOfficialLogin('infra@samadhan.in', 'Demo@1234')}
                                     style={{
                                         padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
                                         background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
                                         display: 'flex', alignItems: 'center', gap: 6, color: '#ea580c'
                                     }}>
-                                    👷‍♂️ Contractor
-                                </button>
-                                <button type="button" onClick={() => handleQuickOfficialLogin('officer@jansetu.ai', 'officer123')}
-                                    style={{
-                                        padding: '7px 8px', borderRadius: 8, border: '1px solid var(--border-light)',
-                                        background: 'white', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', gap: 6, color: '#0284c7'
-                                    }}>
-                                    📋 Dept Officer
+                                    🏗️ Infra Worker
                                 </button>
                             </div>
                         </div>
