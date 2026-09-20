@@ -540,23 +540,37 @@ def verify_aadhaar():
     user = db.users.find_one({'_id': ObjectId(user_id)})
     if not user:
         return jsonify({'error': 'User not found'}), 404
+        
+    # Check if Aadhaar belongs to an existing seeded user
+    existing_user = None
+    for coll in [db.users, db.workers, db.dept_officers, db.contractors, db.admins]:
+        existing_user = coll.find_one({'aadhaar': aadhaar})
+        if existing_user:
+            break
+            
+    if existing_user:
+        aadhaar_name = existing_user.get('name')
+        aadhaar_address = existing_user.get('address') or 'Flat 402, Signature Tower, Gomti Nagar, Lucknow, UP'
+    else:
+        aadhaar_name = 'Ramesh Kumar Official' if aadhaar == '234567890123' else user.get('name', 'Verified Citizen')
+        aadhaar_address = 'Flat 402, Signature Tower, Gomti Nagar, Lucknow, UP'
     
     # Mock Aadhaar response
     kyc_data = {
-        'name': 'Ramesh Kumar Official' if aadhaar == '234567890123' else 'Verified Citizen',
+        'name': aadhaar_name,
         'dob': '1995-08-15',
         'gender': 'Male',
-        'address': 'Flat 402, Signature Tower, Gomti Nagar, Lucknow, UP',
+        'address': aadhaar_address,
         'photo': 'https://i.pravatar.cc/150?u=' + aadhaar
     }
     
     # Mismatch logic
     user_name = user.get('name', '').lower()
-    aadhaar_name = kyc_data['name'].lower()
+    aadhaar_name_lower = kyc_data['name'].lower()
     user_addr = user.get('address', '').lower()
     aadhaar_addr = kyc_data['address'].lower()
     
-    name_mismatch = user_name != aadhaar_name
+    name_mismatch = user_name != aadhaar_name_lower
     # Basic partial address match to simulate real-world fuzziness
     address_mismatch = user_addr not in aadhaar_addr and aadhaar_addr not in user_addr
     
