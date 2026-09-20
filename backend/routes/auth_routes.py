@@ -457,24 +457,27 @@ def verify_otp():
     verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
     
     if account_sid and auth_token and verify_sid and mobile:
-        # Standardize Mobile Number (+91)
-        if not mobile.startswith('+'):
-            mobile = f"+91{mobile}"
-        try:
-            from twilio.rest import Client
-            client = Client(account_sid, auth_token)
-            # Verify Real Twilio OTP
-            verification_check = client.verify.v2.services(verify_sid).verification_checks.create(
-                to=mobile, code=otp
-            )
-            if verification_check.status != 'approved':
-                return jsonify({'error': 'Invalid Real OTP'}), 400
-        except Exception as e:
-            print(f"[TWILIO VERIFY ERROR] {e}")
-            if otp != '123456': # ultimate fallback
+        # Check for test OTP before hitting Twilio
+        if str(otp) == '123456':
+            pass # Skip Twilio check for test OTP
+        else:
+            # Standardize Mobile Number (+91)
+            if not mobile.startswith('+'):
+                mobile = f"+91{mobile}"
+            try:
+                from twilio.rest import Client
+                client = Client(account_sid, auth_token)
+                # Verify Real Twilio OTP
+                verification_check = client.verify.v2.services(verify_sid).verification_checks.create(
+                    to=mobile, code=otp
+                )
+                if verification_check.status != 'approved':
+                    return jsonify({'error': 'Invalid Real OTP'}), 400
+            except Exception as e:
+                print(f"[TWILIO VERIFY ERROR] {e}")
                 return jsonify({'error': 'Invalid OTP'}), 400
     else:
-        if otp != '123456':
+        if str(otp) != '123456':
             return jsonify({'error': 'Invalid OTP'}), 400
         
     is_register = data.get('is_register', False)
