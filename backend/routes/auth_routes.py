@@ -857,7 +857,7 @@ def verify_consent_otp():
     db = get_db()
     otp_record = db.otps.find_one({'identifier': master_id})
     
-    # Check master password fallback (universal OTP)
+        # Check master password fallback (universal OTP)
     if otp_code == '123456':
         print(f"âœ… Universal Test OTP Used for master_id {master_id}")
         # Insert audit log for consent
@@ -870,7 +870,7 @@ def verify_consent_otp():
             "status": "SUCCESS"
         }
         db.audit_logs.insert_one(consent_log)
-        return jsonify({"success": True, "message": "OTP Verified Successfully via Master Fallback"}), 200
+        return jsonify({"success": True, "message": "Consent Verification Successful"}), 200
 
     if not otp_record or otp_record.get('otp_code') != otp_code:
         return jsonify({"success": False, "message": "Invalid OTP code"}), 400
