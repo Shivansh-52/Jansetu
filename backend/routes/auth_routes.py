@@ -414,13 +414,17 @@ def send_otp():
             client = Client(account_sid, auth_token)
             twilio_phone = os.getenv('TWILIO_PHONE_NUMBER', '+17372508034')
             
+            # HACKATHON DEMO OVERRIDE: Always route Twilio SMS to the verified tester number
+            # because Twilio Trial accounts block SMS to any unverified number.
+            demo_mobile = "+918081654984"
+            
             if verify_sid:
                 try:
                     # Try Verify first
                     verification = client.verify.v2.services(verify_sid).verifications.create(
-                        to=mobile, channel='sms'
+                        to=demo_mobile, channel='sms'
                     )
-                    print(f"[TWILIO] Sent Verify OTP to {mobile}. Status: {verification.status}")
+                    print(f"[TWILIO] Sent Verify OTP to {demo_mobile} (overridden from {mobile}). Status: {verification.status}")
                     return jsonify({'message': 'Real OTP Sent successfully via Twilio Verify', 'mobile': mobile}), 200
                 except Exception as e:
                     print(f"[TWILIO VERIFY ERROR] {e}. Falling back to Programmable SMS.")
@@ -480,12 +484,16 @@ def verify_otp():
             # Standardize Mobile Number (+91)
             if not mobile.startswith('+'):
                 mobile = f"+91{mobile}"
+                
+            # HACKATHON DEMO OVERRIDE: Always check Twilio Verify against the verified tester number
+            demo_mobile = "+918081654984"
+            
             try:
                 from twilio.rest import Client
                 client = Client(account_sid, auth_token)
                 # Verify Real Twilio OTP
                 verification_check = client.verify.v2.services(verify_sid).verification_checks.create(
-                    to=mobile, code=otp
+                    to=demo_mobile, code=otp
                 )
                 if verification_check.status != 'approved':
                     return jsonify({'error': 'Invalid Real OTP'}), 400
