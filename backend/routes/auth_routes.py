@@ -278,6 +278,17 @@ def login():
                 user_id = demo_user['id']
                 target_role = demo_user['role']
 
+                # Try to sync with real DB _id to prevent foreign key mismatch (like worker_id in complaints)
+                try:
+                    db = get_db()
+                    for col in [db.users, db.workers, db.dept_officers, db.contractors, db.admins]:
+                        db_user = col.find_one({"email": demo_email})
+                        if db_user:
+                            user_id = str(db_user['_id'])
+                            break
+                except Exception as e:
+                    print(f"Error fetching real DB id for demo account: {e}")
+
                 token = jwt.encode({
                     'user_id': user_id,
                     'role': target_role,
