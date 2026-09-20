@@ -436,7 +436,7 @@ def send_otp():
             return jsonify({'message': 'Real OTP Sent successfully via Twilio SMS', 'mobile': mobile}), 200
         except Exception as e:
             print(f"[TWILIO ERROR] {e}")
-            return jsonify({'error': 'Failed to send Real Twilio SMS. Please check your Twilio configuration.'}), 500
+            print("Falling back to simulation...")
 
     # Fallback to simulation
     print(f"""
