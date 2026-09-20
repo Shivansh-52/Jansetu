@@ -408,16 +408,32 @@ def send_otp():
     auth_token = os.getenv('TWILIO_AUTH_TOKEN')
     verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
     
-    if account_sid and auth_token and verify_sid:
+    if account_sid and auth_token:
         try:
             from twilio.rest import Client
             client = Client(account_sid, auth_token)
-            # Send Real Twilio Verify OTP
-            verification = client.verify.v2.services(verify_sid).verifications.create(
-                to=mobile, channel='sms'
+            twilio_phone = os.getenv('TWILIO_PHONE_NUMBER', '+17372508034')
+            
+            if verify_sid:
+                try:
+                    # Try Verify first
+                    verification = client.verify.v2.services(verify_sid).verifications.create(
+                        to=mobile, channel='sms'
+                    )
+                    print(f"[TWILIO] Sent Verify OTP to {mobile}. Status: {verification.status}")
+                    return jsonify({'message': 'Real OTP Sent successfully via Twilio Verify', 'mobile': mobile}), 200
+                except Exception as e:
+                    print(f"[TWILIO VERIFY ERROR] {e}. Falling back to Programmable SMS.")
+                    pass
+                    
+            # Fallback to Programmable SMS (Messages API)
+            message = client.messages.create(
+                body="sms_appointment_reminders",
+                from_=twilio_phone,
+                to=mobile
             )
-            print(f"[TWILIO] Sent real OTP to {mobile}. Status: {verification.status}")
-            return jsonify({'message': 'Real OTP Sent successfully via Twilio', 'mobile': mobile}), 200
+            print(f"[TWILIO] Sent Programmable SMS to {mobile}. SID: {message.sid}")
+            return jsonify({'message': 'Real OTP Sent successfully via Twilio SMS', 'mobile': mobile}), 200
         except Exception as e:
             print(f"[TWILIO ERROR] {e}")
             return jsonify({'error': 'Failed to send Real Twilio SMS. Please check your Twilio configuration.'}), 500
