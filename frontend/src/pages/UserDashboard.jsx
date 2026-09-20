@@ -92,7 +92,9 @@ const UserDashboard = () => {
     return (
         <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', paddingBottom: 80 }}>
             <div style={{ marginBottom: 30 }}>
-                <h1 style={{ fontSize: 28, marginBottom: 8, color: 'var(--text-primary)' }}>Citizen Dashboard</h1>
+                <h1 style={{ fontSize: 28, marginBottom: 8, color: 'var(--text-primary)' }}>
+                    Welcome, <span style={{ color: 'var(--accent)' }}>{user.name || 'Citizen'}</span>
+                </h1>
                 <p style={{ color: 'var(--text-secondary)' }}>Manage your government services and data permissions.</p>
             </div>
 
@@ -111,6 +113,16 @@ const UserDashboard = () => {
                         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>Master ID</p>
                         <p style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: 'var(--accent)' }}>
                             {user.master_id || 'SP-000001'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 4 }}>Registered Details</p>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                            {user.email || 'No email provided'}
+                        </p>
+                        <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                            {user.phone || 'No phone provided'}
                         </p>
                     </div>
 

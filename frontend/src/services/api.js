@@ -68,8 +68,8 @@ export const verifyOtp = async (aadhaarOrMobile, otpCode, isRegister = false) =>
     return response.data;
 };
 
-export const verifyAadhaar = async (userId, aadhaarNumber) => {
-    const response = await api.post('/auth/verify-aadhaar', { user_id: userId, aadhaar_number: aadhaarNumber });
+export const verifyAadhaar = async (payload) => {
+    const response = await api.post('/auth/verify-aadhaar', payload);
     return response.data;
 };
 

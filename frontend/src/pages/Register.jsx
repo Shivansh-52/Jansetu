@@ -73,15 +73,11 @@ const Register = () => {
         }
         setIsLoading(true);
         setError('');
-        try {
-            const res = await registerUser({ name, email, password, role, department, mobile, address });
-            setRegisteredUserId(res.user_id);
-            setRegStep('aadhaar_prompt'); // Move to Aadhaar KYC phase
-        } catch (err) {
-            setError(err.response?.data?.error || 'Registration failed. Please try again.');
-        } finally {
+        // Defer database registration: just move to the next step
+        setTimeout(() => {
+            setRegStep('aadhaar_prompt'); 
             setIsLoading(false);
-        }
+        }, 500);
     };
 
     const handleVerifyAadhaar = async () => {
@@ -92,7 +88,7 @@ const Register = () => {
         setIsLoading(true);
         setError('');
         try {
-            const kycRes = await verifyAadhaar(registeredUserId, aadhaarId);
+            const kycRes = await verifyAadhaar({ aadhaar_number: aadhaarId, name, address });
             setKycData(kycRes.kyc_data);
             
             if (kycRes.mismatch) {
@@ -113,18 +109,11 @@ const Register = () => {
     };
 
     const handleMismatchDecision = async (useAadhaar) => {
-        setIsLoading(true);
-        setError('');
-        try {
-            if (useAadhaar) {
-                await updateAadhaarDetails(registeredUserId, kycData);
-            }
-            setRegStep('digilocker_prompt');
-        } catch (err) {
-            setError(err.response?.data?.error || 'Failed to update details.');
-        } finally {
-            setIsLoading(false);
+        if (useAadhaar && kycData) {
+            setName(kycData.name || name);
+            setAddress(kycData.address || address);
         }
+        setRegStep('digilocker_prompt');
     };
 
     const handleSendDigilockerOtp = async () => {
@@ -154,11 +143,21 @@ const Register = () => {
         setError('');
         try {
             await verifyOtp(mobile, otpCode, true);
+            
+            // NOW register the user with all accumulated data
+            const registerPayload = { 
+                name, email, password, role, department, mobile, address, 
+                aadhaar: aadhaarId, digilocker_id: digilockerId 
+            };
+            const res = await registerUser(registerPayload);
+            const finalUserId = res.user_id;
+
             // Verify Digilocker and auto-seed demo data
-            await verifyDigilocker(registeredUserId, digilockerId, digilockerMpin);
+            await verifyDigilocker(finalUserId);
+            
             await finalizeLogin();
         } catch (err) {
-            setError(err.response?.data?.error || 'Verification failed.');
+            setError(err.response?.data?.error || 'Verification or Registration failed.');
         } finally {
             setIsLoading(false);
         }
