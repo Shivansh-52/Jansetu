@@ -635,10 +635,10 @@ def verify_aadhaar():
     }
     
     # Mismatch logic
-    user_name = user_name_input.lower()
-    aadhaar_name_lower = kyc_data['name'].lower()
-    user_addr = user_address_input.lower()
-    aadhaar_addr = kyc_data['address'].lower()
+    user_name = (user_name_input or '').lower()
+    aadhaar_name_lower = (kyc_data.get('name') or '').lower()
+    user_addr = (user_address_input or '').lower()
+    aadhaar_addr = (kyc_data.get('address') or '').lower()
     
     name_mismatch = user_name != aadhaar_name_lower
     # Basic partial address match to simulate real-world fuzziness
@@ -849,7 +849,7 @@ def send_consent_otp():
 def verify_consent_otp():
     data = request.json or {}
     master_id = data.get('master_id')
-    otp_code = str(data.get('otp_code', ''))
+    otp_code = str(data.get('otp_code', '')).strip()
     purpose = data.get('purpose', 'Interoperability Verification')
     requesting_dept = data.get('requesting_dept', 'External Department')
     source_dept = data.get('source_dept', 'Public Services / Revenue Department')
