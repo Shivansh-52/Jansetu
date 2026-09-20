@@ -89,7 +89,11 @@ def uploaded_file(filename):
 def serve_frontend():
     index_path = os.path.join(FRONTEND_DIST, 'index.html')
     if os.path.exists(index_path):
-        return send_file(index_path)
+        response = send_file(index_path)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     return {"status": "ok", "message": "JanSetu AI Backend API is running"}, 200
 
 # Handle client-side routing & static assets (CSS, JS, images, favicons)
@@ -102,6 +106,10 @@ def serve_static(path):
     # Check if file exists in frontend dist folder
     file_path = os.path.join(FRONTEND_DIST, path)
     if os.path.exists(file_path) and os.path.isfile(file_path):
+        if path == 'index.html':
+            response = send_from_directory(FRONTEND_DIST, path)
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            return response
         return send_from_directory(FRONTEND_DIST, path)
     
     # If path is an asset request (e.g., .js, .css, .png, or under assets/), do not fallback to index.html
@@ -109,11 +117,13 @@ def serve_static(path):
     if path.startswith('assets/') or ext in ['.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.json', '.woff', '.woff2', '.ttf', '.map']:
         return {"error": "Asset not found"}, 404
 
-    # Otherwise serve index.html for client-side SPA routing
-    index_path = os.path.join(FRONTEND_DIST, 'index.html')
-    if os.path.exists(index_path):
-        return send_file(index_path)
-    return {"error": "Resource not found"}, 404
+    # Fallback to index.html for React Router (don't cache it)
+    if os.path.exists(os.path.join(FRONTEND_DIST, 'index.html')):
+        response = send_file(os.path.join(FRONTEND_DIST, 'index.html'))
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+    
+    return {"error": "Frontend not found"}, 404
 
 if __name__ == '__main__':
     if not os.path.exists(Config.UPLOAD_FOLDER):

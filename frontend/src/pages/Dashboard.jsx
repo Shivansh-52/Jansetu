@@ -245,7 +245,7 @@ const Dashboard = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                         <h3 style={{ fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>📋 Universal Application Tracker</h3>
                         <button className="btn-primary" style={{ padding: '6px 14px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => navigate('/tracking/SP-TRACK-1234')}>
-                            Track Application >
+                            Track Application &gt;
                         </button>
                     </div>
                     
