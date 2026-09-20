@@ -397,8 +397,7 @@ def send_otp():
         if user and user.get('phone'):
             mobile = user.get('phone')
         else:
-            import os
-            mobile = os.getenv('TWILIO_PHONE_NUMBER', "8081654984") # fallback
+            return jsonify({'error': 'User not found in system. Please register first.'}), 404
 
     # Standardize Mobile Number (+91)
     if not mobile.startswith('+'):
@@ -450,8 +449,7 @@ def verify_otp():
         if user and user.get('phone'):
             mobile = user.get('phone')
         else:
-            import os
-            mobile = os.getenv('TWILIO_PHONE_NUMBER', "8081654984")
+            return jsonify({'error': 'User not found in system.'}), 404
             
     import os
     account_sid = os.getenv('TWILIO_ACCOUNT_SID')

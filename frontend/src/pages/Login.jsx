@@ -314,7 +314,7 @@ const Login = () => {
                         ) : ssoStep === 2 ? (
                             <div>
                                 <p style={{ color: '#475569', fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
-                                    Enter 6-digit OTP sent to your phone <strong>(+91 {aadhaarInput})</strong>.
+                                    Enter 6-digit OTP sent to your phone <strong>(+91 {smsBanner.mobile})</strong>.
                                 </p>
                                 <div style={{ marginBottom: 16 }}>
                                     <input 
