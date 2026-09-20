@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import api from '../services/api';
+import { ShieldCheck, ArrowRight, Loader, Info } from 'lucide-react';
 
 const ConsentOtpModal = ({ 
     isOpen, 
@@ -11,6 +13,7 @@ const ConsentOtpModal = ({
     requestingDept, 
     sourceDept 
 }) => {
+    const onVerified = onVerify;
     const [otpSent, setOtpSent] = useState(false);
     const [otpInput, setOtpInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -22,7 +25,7 @@ const ConsentOtpModal = ({
         setLoading(true);
         setError(null);
         try {
-            await axios.post('http://localhost:5000/api/auth/consent/send-otp', {
+            await api.post('/auth/consent/send-otp', {
                 master_id: masterId,
                 mobile: mobile
             });
@@ -43,18 +46,18 @@ const ConsentOtpModal = ({
         setLoading(true);
         setError(null);
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/consent/verify-otp', {
+            const res = await api.post('/auth/consent/verify-otp', {
                 master_id: masterId,
                 otp_code: otpInput,
                 purpose: purpose,
                 requesting_dept: requestingDept,
                 source_dept: sourceDept
             });
-            
-            if (res.data.success) {
-                onVerify(res.data);
+
+            if (res.data && res.data.message === 'Consent Verification Successful') {
+                onVerified(res.data.data);
             } else {
-                setError(res.data.message || 'Verification failed');
+                setError(res.data?.message || 'Verification failed');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'OTP verification failed');
