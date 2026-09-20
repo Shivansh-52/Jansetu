@@ -218,6 +218,22 @@ def login():
                 'district': 'Lucknow',
                 'passwords': ['Demo@1234', 'admin123', '123456', 'Pass@123']
             },
+            'infra@samadhan.in': {
+                'id': 'work_infra_001',
+                'name': 'Field Infrastructure Worker',
+                'role': 'worker',
+                'department': 'Infrastructure',
+                'district': 'Lucknow',
+                'passwords': ['Demo@1234', 'admin123', '123456', 'Pass@123']
+            },
+            'admin@samadhan.in': {
+                'id': 'admin_gov_001',
+                'name': 'Central Government Admin',
+                'role': 'admin',
+                'department': 'State Administration',
+                'district': 'Lucknow',
+                'passwords': ['Demo@1234', 'admin123', '123456', 'Pass@123']
+            },
             'worker@jansetu.ai': {
                 'id': 'work_001',
                 'name': 'Ramesh Kumar (Field Worker)',
