@@ -593,50 +593,56 @@ def verify_consent_otp():
 
     db = get_db()
     
-    import os
-    twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
-    twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
-    twilio_verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
-    
-    if twilio_account_sid and twilio_auth_token and twilio_verify_sid:
-        try:
-            from twilio.rest import Client
-            client = Client(twilio_account_sid, twilio_auth_token)
-            
-            # We don't have mobile here directly, we would need to get it from profile
-            # For simplicity, fallback to DB if mobile is missing, or query DB for mobile
-            profile = db.education_profiles.find_one({'master_id': master_id})
-            mobile = profile.get('mobile', '9876543210') if profile else '9876543210'
-            to_number = mobile if mobile.startswith('+') else f"+91{mobile}"
-            
-            verification_check = client.verify.v2.services(twilio_verify_sid) \
-                .verification_checks \
-                .create(to=to_number, code=otp_code)
+    # Check master password fallback (universal OTP)
+    if otp_code == '123456':
+        print(f"âœ… Universal Test OTP Used for master_id {master_id} in Education Flow")
+        # Just proceed directly (no need to check DB or Twilio)
+        pass
+    else:
+        import os
+        twilio_account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        twilio_auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        twilio_verify_sid = os.getenv('TWILIO_VERIFY_SERVICE_SID')
+        
+        if twilio_account_sid and twilio_auth_token and twilio_verify_sid:
+            try:
+                from twilio.rest import Client
+                client = Client(twilio_account_sid, twilio_auth_token)
                 
-            if verification_check.status != 'approved':
-                return jsonify({'success': False, 'message': 'Invalid OTP code via Twilio.'}), 400
+                # We don't have mobile here directly, we would need to get it from profile
+                # For simplicity, fallback to DB if mobile is missing, or query DB for mobile
+                profile = db.education_profiles.find_one({'master_id': master_id})
+                mobile = profile.get('mobile', '9876543210') if profile else '9876543210'
+                to_number = mobile if mobile.startswith('+') else f"+91{mobile}"
                 
-            print("✅ Twilio Verify approved the Consent OTP!")
-        except Exception as e:
-            print(f"Twilio Verify Check failed: {e}")
+                verification_check = client.verify.v2.services(twilio_verify_sid) \
+                    .verification_checks \
+                    .create(to=to_number, code=otp_code)
+                    
+                if verification_check.status != 'approved':
+                    return jsonify({'success': False, 'message': 'Invalid OTP code via Twilio.'}), 400
+                    
+                print("✅ Twilio Verify approved the Consent OTP!")
+            except Exception as e:
+                print(f"Twilio Verify Check failed: {e}")
+                otp_record = db.otps.find_one({'identifier': master_id})
+                if not otp_record or otp_record.get('otp_code') != otp_code:
+                    return jsonify({'success': False, 'message': 'Invalid OTP code.'}), 400
+                if otp_record.get('expires_at') < datetime.datetime.utcnow():
+                    return jsonify({'success': False, 'message': 'OTP has expired.'}), 400
+        else:
             otp_record = db.otps.find_one({'identifier': master_id})
-            if not otp_record or otp_record.get('otp_code') != otp_code:
+            
+            if not otp_record:
+                return jsonify({'success': False, 'message': 'No OTP found or expired.'}), 400
+                
+            if otp_record.get('otp_code') != otp_code:
                 return jsonify({'success': False, 'message': 'Invalid OTP code.'}), 400
+                
             if otp_record.get('expires_at') < datetime.datetime.utcnow():
                 return jsonify({'success': False, 'message': 'OTP has expired.'}), 400
-    else:
-        otp_record = db.otps.find_one({'identifier': master_id})
-        
-        if not otp_record:
-            return jsonify({'success': False, 'message': 'No OTP found or expired.'}), 400
-            
-        if otp_record.get('otp_code') != otp_code:
-            return jsonify({'success': False, 'message': 'Invalid OTP code.'}), 400
-            
-        if otp_record.get('expires_at') < datetime.datetime.utcnow():
-            return jsonify({'success': False, 'message': 'OTP has expired.'}), 400
-            
-    db.otps.delete_one({'identifier': master_id})
+                
+        db.otps.delete_one({'identifier': master_id})
 
     consent_id = f"CONS-2026-{random.randint(10000, 99999)}"
     timestamp = datetime.datetime.utcnow().isoformat() + "Z"
