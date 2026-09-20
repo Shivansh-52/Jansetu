@@ -46,24 +46,15 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: loginEmail, password: loginPass })
-            });
-            const data = await response.json();
+            const data = await loginUser(loginEmail, loginPass);
             
-            if (response.ok) {
-                sessionStorage.setItem('token', data.token);
-                sessionStorage.setItem('user', JSON.stringify(data.user));
-                sessionStorage.setItem('masterId', data.user.master_id);
-                sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
-                navigate(ROLE_ROUTES[data.user.role] || '/dashboard', { replace: true });
-            } else {
-                setError(data.error || 'Login failed');
-            }
+            sessionStorage.setItem('token', data.token);
+            sessionStorage.setItem('user', JSON.stringify(data.user));
+            sessionStorage.setItem('masterId', data.user.master_id);
+            sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
+            navigate(ROLE_ROUTES[data.user.role] || '/dashboard', { replace: true });
         } catch (err) {
-            setError('Could not connect to the Gateway service. Make sure it is running.');
+            setError(err.response?.data?.error || 'Could not connect to the Gateway service. Make sure it is running.');
         } finally {
             setLoading(false);
         }
