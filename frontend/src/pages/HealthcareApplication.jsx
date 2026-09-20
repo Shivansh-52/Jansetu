@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ConsentOtpModal from '../components/ConsentOtpModal';
 
 const STEPS = [
     'Patient KYC',
@@ -56,11 +57,19 @@ const HealthcareApplication = () => {
     
     const [medicalInfo, setMedicalInfo] = useState({ hospital: '', treatment: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     
     const [profile, setProfile] = useState(null);
 
+    const getUser = () => {
+        try { const s = sessionStorage.getItem('user'); return s ? JSON.parse(s) : null; }
+        catch { return null; }
+    };
+    const user = getUser();
+    const mobile = user?.phone || '9876543210';
+
     useEffect(() => {
-        const storedMasterId = sessionStorage.getItem('masterId');
+        const storedMasterId = sessionStorage.getItem('masterId') || user?.master_id;
         if (!storedMasterId) {
             navigate('/login');
             return;
@@ -74,11 +83,10 @@ const HealthcareApplication = () => {
         });
     }, [navigate]);
 
-    const handleConsentApproval = async () => {
-        setTimeout(() => {
-            setCurrentStep(4);
-            setTimeout(() => setCurrentStep(5), 3000);
-        }, 1000);
+    const handleConsentApproval = () => {
+        setIsOtpModalOpen(false);
+        setCurrentStep(4);
+        setTimeout(() => setCurrentStep(5), 2500);
     };
 
     const submitApplication = async () => {
@@ -191,10 +199,21 @@ const HealthcareApplication = () => {
                             </div>
                             <div style={{ display: 'flex', gap: 12 }}>
                                 <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #cbd5e1', background: 'white' }}>Deny</button>
-                                <button onClick={handleConsentApproval} className="btn-primary" style={{ background: '#059669', borderColor: '#059669' }}>Sign & Allow Data Sharing</button>
+                                <button onClick={() => setIsOtpModalOpen(true)} className="btn-primary" style={{ background: '#059669', borderColor: '#059669' }}>Sign & Allow Data Sharing</button>
                             </div>
                         </div>
                     )}
+
+                    <ConsentOtpModal 
+                        isOpen={isOtpModalOpen}
+                        onClose={() => setIsOtpModalOpen(false)}
+                        onVerify={handleConsentApproval}
+                        masterId={masterId}
+                        mobile={mobile}
+                        purpose="Medical Subsidy Underwriting"
+                        requestingDept="State Health Insurance"
+                        sourceDept="Health & Public Services"
+                    />
 
                     {currentStep === 4 && (
                         <div style={{ textAlign: 'center', padding: '60px 0' }}>

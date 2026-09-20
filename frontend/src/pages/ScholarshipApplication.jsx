@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../services/api';
+import ConsentOtpModal from '../components/ConsentOtpModal';
 
 const STEPS = [
     '1. Overview',
@@ -39,6 +40,7 @@ const ScholarshipApplication = () => {
     });
 
     // Verification & Consent State
+    const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [otpInput, setOtpInput] = useState('');
     const [consentMobile, setConsentMobile] = useState('');
