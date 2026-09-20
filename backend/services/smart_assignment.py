@@ -48,7 +48,7 @@ def get_worker_load(db, worker_id: str) -> int:
 def _resolve_dept_variants(department: str) -> list:
     """Expand a department name to include known legacy variants."""
     variants = {
-        'Road':        ['Road Department'],
+        'Road':        ['Road Department', 'Infrastructure'],
         'Water':       ['Water Department'],
         'Electricity': ['Electricity Department'],
         'Sanitation':  ['Sanitation Department'],
@@ -69,7 +69,10 @@ def get_worker_pool(db, department: str) -> list:
     search_depts = _resolve_dept_variants(department)
 
     workers = list(db.workers.find({
-        'department_id': {'$in': search_depts},
+        '$or': [
+            {'department_id': {'$in': search_depts}},
+            {'department': {'$in': search_depts}}
+        ],
         'is_active':     {'$ne': False}
     }))
 
