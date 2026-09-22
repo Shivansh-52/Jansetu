@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import BackButton from './components/BackButton';
+import ParthAIChat from './components/ParthAIChat';
+import CookieBanner from './components/CookieBanner';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -39,6 +41,10 @@ import InteroperabilityDashboard from './pages/InteroperabilityDashboard';
 
 import DatabaseMonitor from './pages/DatabaseMonitor';
 import MyGovernmentData from './pages/MyGovernmentData';
+import Departments from './pages/Departments';
+import CertificatesHub from './pages/CertificatesHub';
+import AgriculturePortal from './pages/AgriculturePortal';
+import HealthcarePortal from './pages/HealthcarePortal';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -110,6 +116,8 @@ const App = () => {
         <Router>
             <Navbar />
             <BackButton />
+            <ParthAIChat />
+            <CookieBanner />
             <Routes>
                 {/* Public Routes */}
                 <Route
@@ -144,6 +152,10 @@ const App = () => {
                         </RedirectIfAuthenticated>
                     }
                 />
+                <Route path="/departments" element={<Departments />} />
+                <Route path="/certificates-hub" element={<CertificatesHub />} />
+                <Route path="/agriculture-portal" element={<AgriculturePortal />} />
+                <Route path="/healthcare" element={<HealthcarePortal />} />
                 <Route
                     path="/about"
                     element={
@@ -168,7 +180,6 @@ const App = () => {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/certificates" element={<MyCertificates />} />
                 <Route path="/education" element={<DomainEducation />} />
-                <Route path="/healthcare" element={<DomainHealthcare />} />
                 <Route path="/agriculture" element={<DomainAgriculture />} />
                 <Route path="/education/scholarship" element={<ScholarshipApplication />} />
                 <Route path="/education/loan" element={<EducationLoanApplication />} />

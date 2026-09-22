@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser, sendOtp, verifyOtp } from '../services/api';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import { User, Building2, ShieldCheck, Mail, Lock, CheckCircle2, Info, Key, Eye } from 'lucide-react';
 
 const ROLE_ROUTES = {
     citizen: '/user-dashboard',
@@ -13,10 +13,9 @@ const ROLE_ROUTES = {
     governance: '/governance-dashboard'
 };
 
-
-
 const Login = () => {
     const navigate = useNavigate();
+    const [activeRole, setActiveRole] = useState('citizen');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -24,7 +23,7 @@ const Login = () => {
     
     // SSO States
     const [showSsoModal, setShowSsoModal] = useState(false);
-    const [ssoType, setSsoType] = useState(null); // 'aadhaar' or 'meripehchaan'
+    const [ssoType, setSsoType] = useState(null); // 'aadhaar' or 'digilocker'
     const [ssoStep, setSsoStep] = useState(1);
     const [aadhaarInput, setAadhaarInput] = useState('');
     const [enteredOtp, setEnteredOtp] = useState('');
@@ -42,11 +41,12 @@ const Login = () => {
         }
     }, [navigate]);
 
-    const performLogin = async (loginEmail, loginPass) => {
+    const performLogin = async (e) => {
+        if (e) e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            const data = await loginUser(loginEmail, loginPass);
+            const data = await loginUser(email, password);
             
             sessionStorage.setItem('token', data.token);
             sessionStorage.setItem('user', JSON.stringify(data.user));
@@ -54,160 +54,295 @@ const Login = () => {
             sessionStorage.setItem('connectedServices', JSON.stringify(['education', 'publicServices']));
             navigate(ROLE_ROUTES[data.user.role] || '/dashboard', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.error || 'Could not connect to the Gateway service. Make sure it is running.');
+            setError(err.response?.data?.error || 'Could not authenticate. Please check your credentials.');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        await performLogin(email, password);
-    };
-
-
-
     return (
-        <div className="page-bg" style={{
-            minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '40px 20px', position: 'relative', overflow: 'hidden'
-        }}>
-            {/* Background blobs */}
-            <div className="blob" style={{
-                width: 400, height: 400, background: 'var(--bg-secondary)',
-                top: '-10%', right: '-5%'
-            }} />
-            <div className="blob" style={{
-                width: 300, height: 300, background: 'rgba(43,107,255,0.06)',
-                bottom: '10%', left: '-5%'
-            }} />
-
-            <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                style={{ width: '100%', maxWidth: 460, position: 'relative', zIndex: 1 }}
-            >
-                {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                    <div 
-                        onDoubleClick={() => navigate('/up2')}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 16, cursor: 'pointer', userSelect: 'none' }}
-                    >
-                        <div style={{
-                            width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'white', fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: 16
-                        }}>SP</div>
-                        <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)' }}>
-                            Samadhan<span style={{ color: 'var(--accent)' }}>Path</span>
-                        </span>
+        <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', paddingTop: 60, paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: 48 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                        </svg>
                     </div>
-                    <h2 style={{ fontSize: 26, marginBottom: 6 }}>Welcome back</h2>
-                    <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>Single Sign-On (SSO) for all Government Services</p>
+                </div>
+                <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', letterSpacing: '-0.02em' }}>
+                    Samadhan Path
+                </h1>
+                <p style={{ fontSize: 16, color: '#64748b', margin: 0, fontWeight: 500 }}>
+                    One Citizen. One Profile. Every Service. One Smart Journey.
+                </p>
+            </div>
+
+            <div style={{ width: '100%', maxWidth: 900, padding: '0 24px' }}>
+                
+                {/* Role Selector Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Account Role</div>
+                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Citizen-first unified access</div>
                 </div>
 
-
-
-                {/* Card */}
-                <div className="card-js" style={{ padding: 32 }}>
-                    
-                    {/* SSO Buttons */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                        <button 
-                            type="button"
-                            onClick={() => { setSsoType('aadhaar'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('234567890123'); setShowSsoModal(true); }}
-                            style={{
-                                width: '100%', padding: '10px 16px', borderRadius: 8, background: '#fff',
-                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 13,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
-                            }}
-                        >
-                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 20 }} />
-                            Login with Aadhaar OTP
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={() => { setSsoType('digilocker'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('aarav.digilocker'); setShowSsoModal(true); }}
-                            style={{
-                                width: '100%', padding: '10px 16px', borderRadius: 8, background: '#fff',
-                                border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 13,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer'
-                            }}
-                        >
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 20, objectFit: 'contain' }} />
-                            Login with DigiLocker SSO
-                        </button>
+                {/* Role Selector Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
+                    <div 
+                        onClick={() => setActiveRole('citizen')}
+                        style={{ 
+                            backgroundColor: activeRole === 'citizen' ? '#eff6ff' : '#ffffff', 
+                            border: `2px solid ${activeRole === 'citizen' ? '#3b82f6' : '#e2e8f0'}`,
+                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
+                            boxShadow: activeRole === 'citizen' ? '0 4px 12px rgba(59, 130, 246, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'citizen' ? '#dbeafe' : '#f1f5f9', color: activeRole === 'citizen' ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <User size={20} />
+                            </div>
+                            {activeRole === 'citizen' && (
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', backgroundColor: '#bfdbfe', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    Primary Account <CheckCircle2 size={12} />
+                                </span>
+                            )}
+                        </div>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Citizen</h3>
+                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+                            Access government services and track applications
+                        </p>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'citizen' ? '#2563eb' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {activeRole === 'citizen' ? '● Active Selection' : 'Click to select'}
+                            <span style={{ fontSize: 16 }}>→</span>
+                        </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
-                        <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 0.5 }}>OR LOGIN WITH CREDENTIALS</span>
-                        <div style={{ flex: 1, height: 1, background: 'var(--border-light)' }} />
+                    <div 
+                        onClick={() => setActiveRole('dept_officer')}
+                        style={{ 
+                            backgroundColor: activeRole === 'dept_officer' ? '#f5f3ff' : '#ffffff', 
+                            border: `2px solid ${activeRole === 'dept_officer' ? '#8b5cf6' : '#e2e8f0'}`,
+                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
+                            boxShadow: activeRole === 'dept_officer' ? '0 4px 12px rgba(139, 92, 246, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'dept_officer' ? '#ede9fe' : '#f1f5f9', color: activeRole === 'dept_officer' ? '#7c3aed' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Building2 size={20} />
+                            </div>
+                            {activeRole === 'dept_officer' ? (
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#6d28d9', backgroundColor: '#ddd6fe', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    Active Selection <CheckCircle2 size={12} />
+                                </span>
+                            ) : (
+                                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: 12 }}>
+                                    Government Personnel
+                                </span>
+                            )}
+                        </div>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Department Officer</h3>
+                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+                            Review assigned applications and manage departmental workflows
+                        </p>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'dept_officer' ? '#7c3aed' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {activeRole === 'dept_officer' ? '● Active Selection' : 'Click to select'}
+                            <span style={{ fontSize: 16 }}>→</span>
+                        </div>
                     </div>
+
+                    <div 
+                        onClick={() => setActiveRole('admin')}
+                        style={{ 
+                            backgroundColor: activeRole === 'admin' ? '#f0fdf4' : '#ffffff', 
+                            border: `2px solid ${activeRole === 'admin' ? '#10b981' : '#e2e8f0'}`,
+                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
+                            boxShadow: activeRole === 'admin' ? '0 4px 12px rgba(16, 185, 129, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'admin' ? '#dcfce7' : '#f1f5f9', color: activeRole === 'admin' ? '#059669' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ShieldCheck size={20} />
+                            </div>
+                            {activeRole === 'admin' ? (
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#047857', backgroundColor: '#bbf7d0', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    Active Selection <CheckCircle2 size={12} />
+                                </span>
+                            ) : (
+                                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: 12 }}>
+                                    Infrastructure Authority
+                                </span>
+                            )}
+                        </div>
+                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>System Administrator</h3>
+                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
+                            Manage services, integrations, workflows, users and platform security
+                        </p>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'admin' ? '#059669' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {activeRole === 'admin' ? '● Active Selection' : 'Click to select'}
+                            <span style={{ fontSize: 16 }}>→</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Login Form Section */}
+                <motion.div 
+                    key={activeRole}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ backgroundColor: '#ffffff', borderRadius: 24, padding: 40, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)', maxWidth: 500, margin: '0 auto', border: '1px solid #f1f5f9' }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                        <div>
+                            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+                                {activeRole === 'citizen' ? 'Citizen Authentication' : activeRole === 'dept_officer' ? 'Department Login' : 'Admin Portal'}
+                            </h2>
+                            <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+                                Authenticating with Samadhan Path Secure Identity Broker
+                            </p>
+                        </div>
+                        <span style={{ 
+                            fontSize: 10, fontWeight: 800, padding: '4px 8px', borderRadius: 6, letterSpacing: '0.05em', textTransform: 'uppercase',
+                            backgroundColor: activeRole === 'citizen' ? '#eff6ff' : activeRole === 'dept_officer' ? '#f5f3ff' : '#f0fdf4',
+                            color: activeRole === 'citizen' ? '#2563eb' : activeRole === 'dept_officer' ? '#7c3aed' : '#059669'
+                        }}>
+                            {activeRole.replace('_', ' ')}
+                        </span>
+                    </div>
+
                     {error && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            style={{
-                                padding: '12px 16px', borderRadius: 12,
-                                background: '#fef2f2', border: '1px solid #fecaca',
-                                color: 'var(--color-danger)', fontSize: 14, fontWeight: 500,
-                                marginBottom: 20
-                            }}
-                        >
+                        <div style={{ padding: '12px 16px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, fontWeight: 500, marginBottom: 24 }}>
                             {error}
-                        </motion.div>
+                        </div>
                     )}
 
-                    <form onSubmit={handleLogin}>
-                        <div style={{ marginBottom: 16 }}>
-                            <label style={{
-                                display: 'block', fontSize: 13, fontWeight: 600,
-                                color: 'var(--text-secondary)', marginBottom: 6
-                            }}>Master ID / Aadhaar / Mobile / Username</label>
-                            <input
-                                type="text"
-                                className="input-js"
-                                placeholder="e.g. 234567890123"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                autoComplete="username"
-                            />
-                        </div>
+                    {activeRole === 'citizen' && (
+                        <>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                                <button 
+                                    type="button"
+                                    onClick={() => { setSsoType('aadhaar'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('234567890123'); setShowSsoModal(true); }}
+                                    style={{
+                                        width: '100%', padding: '10px 16px', borderRadius: 10, background: '#fff',
+                                        border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.borderColor = '#94a3b8'}
+                                    onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                                >
+                                    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 20 }} />
+                                    Login with Aadhaar OTP
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => { setSsoType('digilocker'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('aarav.digilocker'); setShowSsoModal(true); }}
+                                    style={{
+                                        width: '100%', padding: '10px 16px', borderRadius: 10, background: '#fff',
+                                        border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.borderColor = '#94a3b8'}
+                                    onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
+                                >
+                                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 20, objectFit: 'contain' }} />
+                                    Login with DigiLocker SSO
+                                </button>
+                            </div>
 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, letterSpacing: 0.5 }}>OR LOGIN WITH CREDENTIALS</span>
+                                <div style={{ flex: 1, height: 1, background: '#e2e8f0' }} />
+                            </div>
+                        </>
+                    )}
+
+                    <form onSubmit={performLogin}>
                         <div style={{ marginBottom: 20 }}>
-                            <label style={{
-                                display: 'block', fontSize: 13, fontWeight: 600,
-                                color: 'var(--text-secondary)', marginBottom: 6
-                            }}>Password</label>
-                            <input
-                                type="password"
-                                className="input-js"
-                                placeholder="Enter your password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
-                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <label style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>
+                                    {activeRole === 'citizen' ? 'Email Address or Mobile Number' : 'Official Government Email'} <span style={{ color: '#ef4444' }}>*</span>
+                                </label>
+                                <span style={{ fontSize: 11, color: '#94a3b8' }}>Required</span>
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: '50%', left: 16, transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                                    <Mail size={18} />
+                                </div>
+                                <input 
+                                    type="text" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder={activeRole === 'citizen' ? "e.g. 9876543210 or citizen@example.com" : "officer@gov.in"}
+                                    required
+                                    style={{ width: '100%', padding: '12px 16px 12px 44px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none', transition: 'border-color 0.2s' }}
+                                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                                />
+                            </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            className="btn-primary"
+                        <div style={{ marginBottom: 28 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <label style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>
+                                    Password / Security PIN <span style={{ color: '#ef4444' }}>*</span>
+                                </label>
+                                <a href="#" style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 600 }}>Forgot password?</a>
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: '50%', left: 16, transform: 'translateY(-50%)', color: '#94a3b8' }}>
+                                    <Lock size={18} />
+                                </div>
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Enter your confidential password"
+                                    required
+                                    style={{ width: '100%', padding: '12px 44px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none', transition: 'border-color 0.2s' }}
+                                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                                />
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
                             disabled={loading}
-                            style={{ width: '100%', opacity: loading ? 0.7 : 1 }}
+                            style={{ 
+                                width: '100%', padding: '14px', borderRadius: 10, backgroundColor: activeRole === 'citizen' ? '#0c66e4' : activeRole === 'dept_officer' ? '#7c3aed' : '#059669',
+                                color: 'white', fontWeight: 600, fontSize: 15, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                transition: 'opacity 0.2s', opacity: loading ? 0.7 : 1
+                            }}
                         >
-                            {loading ? 'Signing in...' : 'Sign In'}
+                            {loading ? 'Authenticating...' : `Sign In as ${activeRole === 'dept_officer' ? 'Department' : activeRole === 'admin' ? 'Admin' : 'Citizen'} →`}
                         </button>
                     </form>
 
-                    <div style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-secondary)', fontSize: 13 }}>
-                        Don't have a Master ID? <Link to="/register" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Create one now</Link>
-                    </div>
+                    {activeRole === 'citizen' && (
+                        <>
+                            <div style={{ textAlign: 'center', margin: '24px 0', fontSize: 13, color: '#64748b' }}>
+                                New Citizen? <Link to="/register" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>Create Citizen Account</Link>
+                            </div>
+                            
+                            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #f1f5f9', borderRadius: 12, padding: 16, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                <Info size={16} color="#64748b" style={{ flexShrink: 0, marginTop: 2 }} />
+                                <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.5 }}>
+                                    <strong style={{ color: '#475569' }}>Official Personnel Notice:</strong> Department Officer and System Administrator accounts are provisioned through internal administrative protocols and cannot be registered through public enrollment.
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </motion.div>
+
+                <div style={{ textAlign: 'center', marginTop: 32, fontSize: 12, color: '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Key size={14} /> View Provisioned Government Test Credentials
                 </div>
-            </motion.div>
+
+            </div>
 
             {/* SSO MODAL */}
             {showSsoModal && (
@@ -224,7 +359,7 @@ const Login = () => {
                             ) : (
                                 <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 40, marginBottom: 16, objectFit: 'contain' }} />
                             )}
-                            <h3 style={{ margin: 0, fontSize: 20 }}>
+                            <h3 style={{ margin: 0, fontSize: 20, color: '#0f172a' }}>
                                 {ssoType === 'aadhaar' ? 'Aadhaar Authentication' : 'DigiLocker SSO Authentication'}
                             </h3>
                         </div>
@@ -271,8 +406,7 @@ const Login = () => {
                                         placeholder={ssoType === 'aadhaar' ? "Aadhaar / Mobile (e.g. 234567890123)" : "DigiLocker ID (e.g. aarav.digilocker)"} 
                                         value={aadhaarInput}
                                         onChange={e => setAadhaarInput(e.target.value)}
-                                        className="input-js" 
-                                        style={{ textAlign: 'center', letterSpacing: 1, fontSize: 15, fontWeight: 600 }} 
+                                        style={{ width: '100%', padding: '12px', borderRadius: 10, border: '1px solid #cbd5e1', textAlign: 'center', letterSpacing: 1, fontSize: 15, fontWeight: 600, outline: 'none' }} 
                                     />
                                     <span style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'block', textAlign: 'center' }}>
                                         📲 Real OTP will be dispatched via Twilio Verify to your linked phone
@@ -296,8 +430,7 @@ const Login = () => {
                                         }
                                     }} 
                                     disabled={otpLoading}
-                                    className="btn-js" 
-                                    style={{ width: '100%', background: '#3b82f6', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#3b82f6', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                                 >
                                     📲 {otpLoading ? 'Sending Real OTP...' : 'Send Real OTP to My Phone'}
                                 </button>
@@ -314,8 +447,7 @@ const Login = () => {
                                         maxLength={6}
                                         value={enteredOtp}
                                         onChange={e => setEnteredOtp(e.target.value)}
-                                        className="input-js" 
-                                        style={{ textAlign: 'center', letterSpacing: 8, fontSize: 22, fontWeight: 700 }} 
+                                        style={{ width: '100%', padding: '12px', borderRadius: 10, border: '1px solid #cbd5e1', textAlign: 'center', letterSpacing: 8, fontSize: 22, fontWeight: 700, outline: 'none' }} 
                                     />
                                 </div>
                                 <button 
@@ -348,8 +480,7 @@ const Login = () => {
                                         }
                                     }} 
                                     disabled={otpLoading}
-                                    className="btn-js" 
-                                    style={{ width: '100%', background: '#10b981', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1 }}
+                                    style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#10b981', color: 'white', fontWeight: 700, opacity: otpLoading ? 0.7 : 1 }}
                                 >
                                     {otpLoading ? 'Verifying Twilio OTP...' : 'Verify OTP & Secure Login'}
                                 </button>

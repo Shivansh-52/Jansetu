@@ -583,7 +583,7 @@ def send_consent_otp():
 def verify_consent_otp():
     data = request.json or {}
     master_id = data.get('master_id')
-    otp_code = str(data.get('otp_code', ''))
+    otp_code = str(data.get('otp_code', '')).strip()
     purpose = data.get('purpose', 'Education Loan & Scholarship Interoperability Verification')
     requesting_dept = data.get('requesting_dept', 'Education Department')
     source_dept = data.get('source_dept', 'Public Services / Revenue Department')
