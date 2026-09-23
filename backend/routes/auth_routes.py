@@ -315,42 +315,54 @@ def login():
         # ===== 2. Database Lookup =====
         user = None
         role = 'citizen'
+        db_error = None
         try:
             db = get_db()
-            if db is not None:
-                # 1. Check Users (Citizens) by email or master_id
-                pattern = re.compile(f'^{re.escape(email_or_id)}$', re.IGNORECASE)
-                user = db.users.find_one({'email': pattern})
-                if not user:
-                    user = db.users.find_one({'master_id': pattern})
+            # Search pattern for email / master_id (case-insensitive)
+            pattern = re.compile(f'^{re.escape(email_or_id)}$', re.IGNORECASE)
+
+            # 1. Check Users (Citizens) by email, mobile, or master_id
+            user = db.users.find_one({'$or': [
+                {'email': pattern},
+                {'mobile': email_or_id},
+                {'mobile': email_or_id.lstrip('0')},
+                {'master_id': pattern}
+            ]})
+            if user:
+                role = user.get('role', 'citizen').lower()
+
+            # 2. Check Workers
+            if not user:
+                user = db.workers.find_one({'$or': [{'email': pattern}, {'mobile': email_or_id}]})
                 if user:
-                    role = user.get('role', 'citizen').lower()
+                    role = 'worker'
 
-                # 2. Check Workers
-                if not user:
-                    user = db.workers.find_one({'email': pattern})
-                    if user:
-                        role = 'worker'
+            # 3. Check Dept Officers
+            if not user:
+                user = db.dept_officers.find_one({'$or': [{'email': pattern}, {'mobile': email_or_id}]})
+                if user:
+                    role = 'dept_officer'
 
-                # 3. Check Dept Officers
-                if not user:
-                    user = db.dept_officers.find_one({'email': pattern})
-                    if user:
-                        role = 'dept_officer'
+            # 4. Check Contractors
+            if not user:
+                user = db.contractors.find_one({'$or': [{'email': pattern}, {'mobile': email_or_id}]})
+                if user:
+                    role = 'contractor'
 
-                # 4. Check Contractors
-                if not user:
-                    user = db.contractors.find_one({'email': pattern})
-                    if user:
-                        role = 'contractor'
+            # 5. Check Admins & Governance
+            if not user:
+                user = db.admins.find_one({'$or': [{'email': pattern}, {'mobile': email_or_id}]})
+                if user:
+                    role = user.get('role', 'admin').lower()
 
-                # 5. Check Admins & Governance
-                if not user:
-                    user = db.admins.find_one({'email': pattern})
-                    if user:
-                        role = user.get('role', 'admin').lower()
+        except RuntimeError as db_err:
+            # DB is genuinely unreachable (MONGO_URI missing / Atlas down)
+            db_error = str(db_err)
+            print(f"[AUTH LOGIN] DB unavailable: {db_error}")
+            return jsonify({'error': 'Database connection error. Please try again in a moment or use demo credentials.'}), 503
         except Exception as db_err:
-            print(f"[AUTH LOGIN] DB search warning: {db_err}")
+            db_error = str(db_err)
+            print(f"[AUTH LOGIN] DB search error: {db_error}")
 
         if user:
             stored_hash = user.get('password_hash')
@@ -377,11 +389,10 @@ def login():
                 }, Config.SECRET_KEY, algorithm="HS256")
 
                 try:
-                    if db is not None:
-                        db.complaints.update_many(
-                            {'email': user.get('email', email_or_id), 'user_id': 'Anonymous'},
-                            {'$set': {'user_id': user_id}}
-                        )
+                    db.complaints.update_many(
+                        {'email': user.get('email', email_or_id), 'user_id': 'Anonymous'},
+                        {'$set': {'user_id': user_id}}
+                    )
                 except Exception:
                     pass
 
@@ -404,7 +415,8 @@ def login():
             else:
                 return jsonify({'error': 'Invalid password. Please try again.'}), 401
         else:
-            return jsonify({'error': f'Account not found for "{email_or_id}". Use demo credentials or register.'}), 401
+            hint = ' (DB error prevented lookup)' if db_error else ''
+            return jsonify({'error': f'Account not found for "{email_or_id}"{hint}. Use demo credentials or register.'}), 401
 
     except Exception as e:
         print(f"CRITICAL ERROR in Login: {e}")
