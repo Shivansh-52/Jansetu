@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import BackButton from './components/BackButton';
 import ParthAIChat from './components/ParthAIChat';
@@ -111,209 +111,251 @@ const RedirectIfAuthenticated = ({ children }) => {
     return children;
 };
 
-const App = () => {
+// Layout component to wrap pages with common elements
+const Layout = () => {
     return (
-        <Router>
+        <>
             <Navbar />
             <BackButton />
             <ParthAIChat />
             <CookieBanner />
-            <Routes>
-                {/* Public Routes */}
-                <Route
-                    path="/"
-                    element={
-                        <RedirectIfAuthenticated>
-                            <Home />
-                        </RedirectIfAuthenticated>
-                    }
-                />
-                <Route
-                    path="/login"
-                    element={
-                        <RedirectIfAuthenticated>
-                            <Login />
-                        </RedirectIfAuthenticated>
-                    }
-                />
-                <Route
-                    path="/register"
-                    element={
-                        <RedirectIfAuthenticated>
-                            <Register />
-                        </RedirectIfAuthenticated>
-                    }
-                />
-                <Route
-                    path="/services"
-                    element={
-                        <RedirectIfAuthenticated>
-                            <Services />
-                        </RedirectIfAuthenticated>
-                    }
-                />
-                <Route path="/departments" element={<Departments />} />
-                <Route path="/certificates-hub" element={<CertificatesHub />} />
-                <Route path="/agriculture-portal" element={<AgriculturePortal />} />
-                <Route path="/healthcare" element={<HealthcarePortal />} />
-                <Route
-                    path="/about"
-                    element={
-                        <RedirectIfAuthenticated>
-                            <About />
-                        </RedirectIfAuthenticated>
-                    }
-                />
-                <Route path="/track" element={<PublicTracking />} />
-                <Route path="/asset-passport" element={<AssetPassport />} />
-                <Route 
-                    path="/register-complaint" 
-                    element={
-                        <CitizenOrGuestRoute>
-                            <RegisterComplaint />
-                        </CitizenOrGuestRoute>
-                    } 
-                />
-                <Route path="/up2" element={<OfficialAuth />} />
-
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/certificates" element={<MyCertificates />} />
-                <Route path="/education" element={<DomainEducation />} />
-                <Route path="/agriculture" element={<DomainAgriculture />} />
-                <Route path="/education/scholarship" element={<ScholarshipApplication />} />
-                <Route path="/education/loan" element={<EducationLoanApplication />} />
-                <Route path="/healthcare/apply" element={<HealthcareApplication />} />
-                <Route path="/agriculture/apply" element={<AgricultureApplication />} />
-                <Route path="/tracking/:id" element={<ApplicationTracking />} />
-                <Route path="/interoperability" element={<InteroperabilityMonitor />} />
-                <Route path="/interoperability-demo" element={<InteroperabilityDashboard />} />
-                <Route path="/security" element={<SecurityCenter />} />
-                <Route path="/transformations" element={<DataTransformation />} />
-                <Route path="/permissions" element={<DataPermissions />} />
-                
-                <Route path="/database-monitor" element={<DatabaseMonitor />} />
-                <Route path="/my-government-data" element={<MyGovernmentData />} />
-                
-                {/* Citizen Dashboard & Domains */}
-                <Route
-                    path="/user-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <UserDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/domain-education"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <DomainEducation />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/domain-healthcare"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <DomainHealthcare />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/domain-agriculture"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <DomainAgriculture />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/domain-public-services"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <DomainPublicServices />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/document-vault"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <DocumentVault />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route
-                    path="/consent-center"
-                    element={
-                        <ProtectedRoute allowedRoles={['citizen']}>
-                            <ConsentCenter />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Complaint Details */}
-                <Route
-                    path="/complaint/:id"
-                    element={<ComplaintDetails />}
-                />
-
-                {/* Worker Dashboard */}
-                <Route
-                    path="/worker-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['worker']}>
-                            <WorkerDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Contractor Dashboard */}
-                <Route
-                    path="/contractor-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['contractor', 'admin', 'governance']}>
-                            <ContractorDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Dept Officer Dashboard */}
-                <Route
-                    path="/dept-officer-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['dept_officer']}>
-                            <DeptOfficerDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Admin Dashboard */}
-                <Route
-                    path="/admin-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['admin']}>
-                            <AdminDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Governance Dashboard */}
-                <Route
-                    path="/governance-dashboard"
-                    element={
-                        <ProtectedRoute allowedRoles={['governance', 'admin']}>
-                            <GovernanceDashboard />
-                        </ProtectedRoute>
-                    }
-                />
-
-                {/* Catch-all redirect to Home */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Router>
+            <Outlet />
+        </>
     );
+};
+
+const router = createBrowserRouter([
+    {
+        element: <Layout />,
+        children: [
+            {
+                path: "/",
+                element: (
+                        <Home />
+                ),
+            },
+            {
+                path: "/login",
+                element: (
+                    <RedirectIfAuthenticated>
+                        <Login />
+                    </RedirectIfAuthenticated>
+                ),
+            },
+            {
+                path: "/register",
+                element: (
+                    <RedirectIfAuthenticated>
+                        <Register />
+                    </RedirectIfAuthenticated>
+                ),
+            },
+            {
+                path: "/services",
+                element: (
+                        <Services />
+                ),
+            },
+            {
+                path: "/departments",
+                element: <Departments />,
+            },
+            {
+                path: "/certificates-hub",
+                element: <CertificatesHub />,
+            },
+            {
+                path: "/agriculture-portal",
+                element: <AgriculturePortal />,
+            },
+            {
+                path: "/healthcare",
+                element: <HealthcarePortal />,
+            },
+            {
+                path: "/about",
+                element: (
+                        <About />
+                ),
+            },
+            {
+                path: "/track",
+                element: <PublicTracking />,
+            },
+            {
+                path: "/asset-passport",
+                element: <AssetPassport />,
+            },
+            {
+                path: "/register-complaint",
+                element: (
+                    <CitizenOrGuestRoute>
+                        <RegisterComplaint />
+                    </CitizenOrGuestRoute>
+                ),
+            },
+            {
+                path: "/official-auth",
+                element: <OfficialAuth />,
+            },
+            {
+                path: "/dashboard",
+                element: <Dashboard />,
+            },
+            {
+                path: "/certificates",
+                element: <MyCertificates />,
+            },
+            {
+                path: "/education",
+                element: <DomainEducation />,
+            },
+            {
+                path: "/agriculture",
+                element: <DomainAgriculture />,
+            },
+            {
+                path: "/education/scholarship",
+                element: <ScholarshipApplication />,
+            },
+            {
+                path: "/education/loan",
+                element: <EducationLoanApplication />,
+            },
+            {
+                path: "/healthcare/apply",
+                element: <HealthcareApplication />,
+            },
+            {
+                path: "/agriculture/apply",
+                element: <AgricultureApplication />,
+            },
+            {
+                path: "/tracking/:id",
+                element: <ApplicationTracking />,
+            },
+            {
+                path: "/interoperability",
+                element: <InteroperabilityMonitor />,
+            },
+            {
+                path: "/interoperability-demo",
+                element: <InteroperabilityDashboard />,
+            },
+            {
+                path: "/security",
+                element: <SecurityCenter />,
+            },
+            {
+                path: "/transformations",
+                element: <DataTransformation />,
+            },
+            {
+                path: "/permissions",
+                element: <DataPermissions />,
+            },
+            {
+                path: "/database-monitor",
+                element: <DatabaseMonitor />,
+            },
+            {
+                path: "/my-government-data",
+                element: <MyGovernmentData />,
+            },
+            {
+                path: "/user-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['citizen']}>
+                        <UserDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/domain-education",
+                element: <DomainEducation />,
+            },
+            {
+                path: "/domain-healthcare",
+                element: <DomainHealthcare />,
+            },
+            {
+                path: "/domain-agriculture",
+                element: <DomainAgriculture />,
+            },
+            {
+                path: "/domain-public-services",
+                element: <DomainPublicServices />,
+            },
+            {
+                path: "/document-vault",
+                element: (
+                    <ProtectedRoute allowedRoles={['citizen']}>
+                        <DocumentVault />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/consent-center",
+                element: (
+                    <ProtectedRoute allowedRoles={['citizen']}>
+                        <ConsentCenter />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/complaint/:id",
+                element: <ComplaintDetails />,
+            },
+            {
+                path: "/worker-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['worker']}>
+                        <WorkerDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/contractor-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['contractor', 'admin', 'governance']}>
+                        <ContractorDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/dept-officer-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['dept_officer']}>
+                        <DeptOfficerDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/admin-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "/governance-dashboard",
+                element: (
+                    <ProtectedRoute allowedRoles={['governance', 'admin']}>
+                        <GovernanceDashboard />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: "*",
+                element: <Navigate to="/" replace />,
+            },
+        ],
+    },
+]);
+
+const App = () => {
+    return <RouterProvider router={router} />;
 };
 
 export default App;

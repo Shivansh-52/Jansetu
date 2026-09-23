@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConsentOtpModal from '../components/ConsentOtpModal';
-
+import useUnsavedChangesWarning from '../hooks/useUnsavedChangesWarning';
 const STEPS = [
     'Patient KYC',
     'Medical Details',
@@ -60,6 +60,20 @@ const HealthcareApplication = () => {
     const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
     
     const [profile, setProfile] = useState(null);
+
+    // Apply navigation warning if form is started but not approved
+    const isDirty = currentStep > 0 && currentStep < 6;
+    useUnsavedChangesWarning(isDirty);
+
+    useEffect(() => {
+        if (currentStep === 6) {
+            const handlePopState = () => {
+                navigate('/user-dashboard', { replace: true });
+            };
+            window.addEventListener('popstate', handlePopState);
+            return () => window.removeEventListener('popstate', handlePopState);
+        }
+    }, [currentStep, navigate]);
 
     const getUser = () => {
         try { const s = sessionStorage.getItem('user'); return s ? JSON.parse(s) : null; }

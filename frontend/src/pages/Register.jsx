@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser, verifyAadhaar, verifyDigilocker, loginUser } from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, User, Mail, Phone, MapPin, AlertTriangle, Eye, Lock } from 'lucide-react';
+import { ShieldCheck, User, Mail, Phone, MapPin, AlertTriangle, Eye, Lock, Cloud, Fingerprint } from 'lucide-react';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -22,8 +22,70 @@ const Register = () => {
     const [error, setError] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    // Captcha States
+    const [captcha, setCaptcha] = useState('');
+    const [captchaInput, setCaptchaInput] = useState('');
+    const [captchaError, setCaptchaError] = useState('');
+    const captchaCanvasRef = React.useRef(null);
+
+    const generateCaptcha = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let captchaStr = '';
+        for (let i = 0; i < 6; i++) {
+            captchaStr += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setCaptcha(captchaStr);
+        setCaptchaInput('');
+        
+        // Draw on canvas
+        setTimeout(() => {
+            const canvas = captchaCanvasRef.current;
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Background
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw noise lines
+                for (let i = 0; i < 6; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                // Draw text
+                ctx.font = 'bold 22px monospace';
+                ctx.fillStyle = '#0f172a';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Add some letter distortion
+                for (let i = 0; i < captchaStr.length; i++) {
+                    ctx.save();
+                    const x = 25 + (i * 22);
+                    const y = canvas.height / 2;
+                    ctx.translate(x, y);
+                    ctx.rotate((Math.random() - 0.5) * 0.5);
+                    ctx.fillText(captchaStr[i], 0, 0);
+                    ctx.restore();
+                }
+            }
+        }, 0);
+    };
+
+    React.useEffect(() => {
+        generateCaptcha();
+    }, []);
+
     // KYC State
     const [aadhaarId, setAadhaarId] = useState('');
+    const [aadhaarOtp, setAadhaarOtp] = useState('');
+    const [aadhaarOtpSent, setAadhaarOtpSent] = useState(false);
     const [registeredUserId, setRegisteredUserId] = useState(null);
     const [kycData, setKycData] = useState(null);
     const [mismatchReason, setMismatchReason] = useState(null);
@@ -32,10 +94,23 @@ const Register = () => {
     const [digilockerId, setDigilockerId] = useState('');
     const [digilockerMpin, setDigilockerMpin] = useState('');
     const [otpCode, setOtpCode] = useState('');
+    
+    // Realistic DigiLocker Modal States
+    const [showRealDigilockerModal, setShowRealDigilockerModal] = useState(false);
+    const [dlIdentifier, setDlIdentifier] = useState('');
+    const [dlPin, setDlPin] = useState('');
 
     const handleRegister = async (e) => {
         e.preventDefault();
         setError('');
+        setCaptchaError('');
+
+        if (captchaInput.toLowerCase() !== captcha.toLowerCase()) {
+            setCaptchaError('Incorrect captcha. Please try again.');
+            generateCaptcha();
+            return;
+        }
+
         if (!consent) {
             setError('Please accept the DPDP Act consent terms.');
             return;
@@ -56,25 +131,37 @@ const Register = () => {
         }
     };
 
+    const handleSendAadhaarOtp = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        // Simulate network latency for OTP
+        setTimeout(() => {
+            setAadhaarOtpSent(true);
+            setIsLoading(false);
+        }, 1200);
+    };
+
     const handleVerifyAadhaar = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
         try {
-            // Use existing api call or mock it if fails
-            try {
-                const response = await verifyAadhaar({ user_id: registeredUserId, aadhaar_id: aadhaarId });
-                setKycData(response.kyc_data);
-                if (response.kyc_status === 'mismatch_flagged') {
-                    setMismatchReason(response.mismatch_reason);
-                    setRegStep('mismatch');
-                } else {
-                    setRegStep('digilocker_prompt');
-                }
-            } catch (err) {
-                // Mock behavior if API doesn't support this fully yet
-                setTimeout(() => setRegStep('digilocker_prompt'), 1000);
+            // Check mismatch using backend logic
+            const response = await verifyAadhaar({ 
+                user_id: registeredUserId, 
+                aadhaar_number: aadhaarId,
+                name: name,
+                address: address
+            });
+            setKycData(response.kyc_data);
+            if (response.mismatch || response.name_mismatch || response.address_mismatch) {
+                setMismatchReason('The name or address on your Aadhaar card differs slightly from what you entered.');
+                setRegStep('mismatch');
+            } else {
+                setRegStep('digilocker_prompt');
             }
+        } catch (err) {
+            setError(err.response?.data?.error || 'Aadhaar verification failed');
         } finally {
             setIsLoading(false);
         }
@@ -89,28 +176,25 @@ const Register = () => {
         }, 800);
     };
 
-    const handleSendDigilockerOtp = async (e) => {
+    const handleSimulatedDigilockerLogin = async (e) => {
         e.preventDefault();
-        setError('');
         setIsLoading(true);
-        try {
-            await verifyDigilocker(registeredUserId, digilockerId, digilockerMpin);
-            setRegStep('digilocker_otp');
-        } catch (err) {
-            // Mock if fails
-            setTimeout(() => setRegStep('digilocker_otp'), 800);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleVerifyDigilocker = async (e) => {
-        e.preventDefault();
-        setError('');
-        setIsLoading(true);
+        
+        // Simulate network request to authentic government servers
         setTimeout(() => {
-            finalizeLogin();
-        }, 800);
+            // Success - directly navigate to user dashboard without API Setu redirect
+            setIsLoading(false);
+            sessionStorage.setItem('token', 'simulated_digilocker_token_for_hackathon');
+            sessionStorage.setItem('role', 'citizen');
+            sessionStorage.setItem('user', JSON.stringify({ 
+                role: 'citizen', 
+                name: name || 'Demo Citizen', 
+                email: email || 'aarav.digilocker@gov.in', 
+                aadhaar: aadhaarId,
+                digilocker_id: dlIdentifier
+            }));
+            navigate('/user-dashboard', { replace: true });
+        }, 2000);
     };
 
     const finalizeLogin = async () => {
@@ -125,28 +209,13 @@ const Register = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: 'calc(100vh - 64px)', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
             
-            {/* Minimal Header */}
-            <header style={{ padding: '24px 48px', backgroundColor: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>Samadhan Path</span>
-                </div>
-                <div style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>
-                    Already have an account? <Link to="/login" style={{ color: '#2563eb', textDecoration: 'none' }}>Log in</Link>
-                </div>
-            </header>
-
-            {/* Two Column Layout */}
+            {/* Single Column Layout */}
             <div style={{ flex: 1, display: 'flex' }}>
                 
-                {/* Left Column - Form */}
-                <div style={{ flex: '1 1 60%', padding: '48px', display: 'flex', justifyContent: 'center', backgroundColor: '#ffffff' }}>
+                {/* Form Container */}
+                <div style={{ flex: 1, padding: '48px', display: 'flex', justifyContent: 'center', backgroundColor: '#ffffff' }}>
                     <div style={{ width: '100%', maxWidth: 540 }}>
                         <div style={{ marginBottom: 32 }}>
                             <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
@@ -226,6 +295,32 @@ const Register = () => {
                                         </div>
                                     </div>
 
+                                    <div style={{ marginBottom: 24 }}>
+                                        <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
+                                            Captcha Verification <span style={{ color: '#ef4444' }}>*</span>
+                                        </label>
+                                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                            <div style={{ position: 'relative', width: '150px', height: '46px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                                <canvas ref={captchaCanvasRef} width={150} height={46} style={{ display: 'block', width: '100%', height: '100%' }}></canvas>
+                                            </div>
+                                            <button type="button" onClick={generateCaptcha} style={{ padding: '12px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Refresh Captcha">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 2v6h6"/></svg>
+                                            </button>
+                                            <input 
+                                                type="text" 
+                                                value={captchaInput}
+                                                onChange={(e) => setCaptchaInput(e.target.value)}
+                                                placeholder="Enter text"
+                                                required
+                                                style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }}
+                                            />
+                                            />
+                                        </div>
+                                        {captchaError && (
+                                            <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 600, marginTop: 8 }}>{captchaError}</div>
+                                        )}
+                                    </div>
+
                                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 32, backgroundColor: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #f1f5f9' }}>
                                         <input type="checkbox" id="dpdp" checked={consent} onChange={e => setConsent(e.target.checked)} style={{ marginTop: 4, width: 16, height: 16, accentColor: '#2563eb' }} />
                                         <label htmlFor="dpdp" style={{ fontSize: 13, color: '#475569', lineHeight: 1.5 }}>
@@ -243,25 +338,45 @@ const Register = () => {
                                 <motion.form 
                                     key="aadhaar"
                                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                                    onSubmit={handleVerifyAadhaar}
+                                    onSubmit={aadhaarOtpSent ? handleVerifyAadhaar : handleSendAadhaarOtp}
                                 >
                                     <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 32, textAlign: 'center' }}>
-                                        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 48, marginBottom: 24 }} />
-                                        <h3 style={{ fontSize: 20, color: '#0f172a', marginBottom: 12 }}>KYC Verification Required</h3>
-                                        <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Enter your 12-digit Aadhaar number to verify your identity.</p>
+                                        <Fingerprint color="#22c55e" size={48} style={{ marginBottom: 24, margin: '0 auto' }} />
+                                        <h3 style={{ fontSize: 20, color: '#0f172a', marginBottom: 12 }}>Aadhaar Verification</h3>
                                         
-                                        <input 
-                                            type="text" 
-                                            value={aadhaarId} 
-                                            onChange={e => setAadhaarId(e.target.value)} 
-                                            required 
-                                            placeholder="XXXX XXXX XXXX" 
-                                            style={{ width: '100%', padding: '16px', borderRadius: 12, border: '2px solid #cbd5e1', fontSize: 18, textAlign: 'center', letterSpacing: 2, marginBottom: 24, outline: 'none' }} 
-                                        />
+                                        {!aadhaarOtpSent ? (
+                                            <>
+                                                <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Enter your 12-digit Aadhaar number to verify your identity.</p>
+                                                <input 
+                                                    type="text" 
+                                                    value={aadhaarId} 
+                                                    onChange={e => setAadhaarId(e.target.value)} 
+                                                    required 
+                                                    placeholder="XXXX XXXX XXXX" 
+                                                    style={{ width: '100%', padding: '16px', borderRadius: 12, border: '2px solid #cbd5e1', fontSize: 18, textAlign: 'center', letterSpacing: 2, marginBottom: 24, outline: 'none' }} 
+                                                />
+                                                <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#22c55e', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
+                                                    {isLoading ? 'Sending OTP...' : 'Get Aadhaar OTP'}
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Enter the 6-digit OTP sent to your Aadhaar registered mobile number.</p>
+                                                <input 
+                                                    type="text" 
+                                                    value={aadhaarOtp} 
+                                                    onChange={e => setAadhaarOtp(e.target.value)} 
+                                                    required 
+                                                    maxLength="6"
+                                                    placeholder="000000" 
+                                                    style={{ width: '100%', padding: '16px', borderRadius: 12, border: '2px solid #cbd5e1', fontSize: 18, textAlign: 'center', letterSpacing: 4, marginBottom: 24, outline: 'none' }} 
+                                                />
+                                                <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#ea580c', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
+                                                    {isLoading ? 'Verifying...' : 'Verify & Proceed'}
+                                                </button>
+                                            </>
+                                        )}
                                         
-                                        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#ea580c', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
-                                            {isLoading ? 'Verifying...' : 'Verify Identity'}
-                                        </button>
                                         <button type="button" onClick={() => setRegStep('digilocker_prompt')} style={{ width: '100%', padding: '14px', background: 'none', border: 'none', color: '#64748b', fontWeight: 600, marginTop: 12, cursor: 'pointer' }}>
                                             Skip for now
                                         </button>
@@ -294,97 +409,78 @@ const Register = () => {
                             )}
 
                             {regStep === 'digilocker_prompt' && (
-                                <motion.form 
+                                <motion.div 
                                     key="digilocker_prompt"
                                     initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                                    onSubmit={handleSendDigilockerOtp}
                                 >
                                     <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 32, textAlign: 'center' }}>
-                                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 40, marginBottom: 24, objectFit: 'contain' }} />
-                                        <h3 style={{ fontSize: 20, color: '#0f172a', marginBottom: 12 }}>Connect DigiLocker</h3>
-                                        <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Link your DigiLocker to auto-fetch your certificates and documents seamlessly.</p>
+                                        <Cloud color="#3b82f6" size={48} style={{ marginBottom: 24, margin: '0 auto' }} />
+                                        <h3 style={{ fontSize: 20, color: '#0f172a', marginBottom: 12 }}>DigiLocker Integration</h3>
+                                        <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Automatically fetch and securely store your official documents.</p>
                                         
-                                        <input type="text" value={digilockerId} onChange={e => setDigilockerId(e.target.value)} required placeholder="DigiLocker ID (e.g. username)" style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1px solid #cbd5e1', fontSize: 15, marginBottom: 16, outline: 'none' }} />
-                                        <input type="password" value={digilockerMpin} onChange={e => setDigilockerMpin(e.target.value)} required placeholder="6-digit Security PIN" maxLength="6" style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1px solid #cbd5e1', fontSize: 15, marginBottom: 24, outline: 'none' }} />
-                                        
-                                        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#3b82f6', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
-                                            {isLoading ? 'Connecting...' : 'Connect to DigiLocker'}
+                                        <button type="button" onClick={() => setShowRealDigilockerModal(true)} disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#3b82f6', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
+                                            Sign in with MeriPehchaan
                                         </button>
                                         <button type="button" onClick={finalizeLogin} style={{ width: '100%', padding: '14px', background: 'none', border: 'none', color: '#64748b', fontWeight: 600, marginTop: 12, cursor: 'pointer' }}>
                                             Skip & Go to Dashboard
                                         </button>
                                     </div>
-                                </motion.form>
+                                </motion.div>
                             )}
 
-                            {regStep === 'digilocker_otp' && (
-                                <motion.form 
-                                    key="digilocker_otp"
-                                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                                    onSubmit={handleVerifyDigilocker}
+                            {showRealDigilockerModal && (
+                                <motion.div 
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: 20 }}
                                 >
-                                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 32, textAlign: 'center' }}>
-                                        <ShieldCheck size={48} color="#10b981" style={{ margin: '0 auto 20px auto' }} />
-                                        <h3 style={{ fontSize: 20, color: '#0f172a', marginBottom: 12 }}>Enter OTP</h3>
-                                        <p style={{ color: '#64748b', fontSize: 14, marginBottom: 24 }}>Enter the 6-digit OTP sent to your registered mobile number by DigiLocker.</p>
+                                    <motion.div 
+                                        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                                        style={{ background: 'white', width: '100%', maxWidth: 450, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+                                    >
+                                        <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <ShieldCheck color="#16a34a" size={32} />
+                                                <div>
+                                                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: 0 }}>MeriPehchaan</h3>
+                                                    <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>National Single Sign-On</p>
+                                                </div>
+                                            </div>
+                                            <Cloud color="#3b82f6" size={28} />
+                                        </div>
                                         
-                                        <input type="text" value={otpCode} onChange={e => setOtpCode(e.target.value)} required placeholder="●●●●●●" maxLength="6" style={{ width: '100%', padding: '16px', borderRadius: 12, border: '2px solid #cbd5e1', fontSize: 24, letterSpacing: 8, textAlign: 'center', marginBottom: 24, outline: 'none' }} />
-                                        
-                                        <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 12, backgroundColor: '#10b981', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
-                                            {isLoading ? 'Verifying...' : 'Verify OTP & Complete Registration'}
-                                        </button>
-                                    </div>
-                                </motion.form>
+                                        <form onSubmit={handleSimulatedDigilockerLogin} style={{ padding: '32px 24px' }}>
+                                            <h4 style={{ fontSize: 18, color: '#0f172a', fontWeight: 600, marginBottom: 24 }}>Sign In to your account</h4>
+                                            
+                                            <div style={{ marginBottom: 20 }}>
+                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Mobile / Aadhaar / Username</label>
+                                                <input type="text" value={dlIdentifier} onChange={e => setDlIdentifier(e.target.value)} required placeholder="Enter Mobile / Aadhaar / Username" style={{ width: '100%', padding: '14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }} />
+                                            </div>
+                                            
+                                            <div style={{ marginBottom: 24 }}>
+                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>6 digit security PIN</label>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input type="password" value={dlPin} onChange={e => setDlPin(e.target.value)} required placeholder="Enter 6 digit security PIN" maxLength="6" style={{ width: '100%', padding: '14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }} />
+                                                    <span style={{ position: 'absolute', right: 14, top: 14, color: '#3b82f6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Forgot PIN?</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                                                <input type="checkbox" id="dlconsent" required style={{ accentColor: '#22c55e', width: 16, height: 16 }} />
+                                                <label htmlFor="dlconsent" style={{ fontSize: 13, color: '#475569' }}>I consent to MeriPehchaan terms of use.</label>
+                                            </div>
+
+                                            <button type="submit" disabled={isLoading} style={{ width: '100%', padding: '14px', borderRadius: 8, backgroundColor: '#2563eb', color: 'white', fontWeight: 600, fontSize: 15, border: 'none', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}>
+                                                {isLoading ? 'Signing In...' : 'Sign In'}
+                                            </button>
+                                            
+                                            <p style={{ textAlign: 'center', fontSize: 13, color: '#64748b', marginTop: 24, marginBottom: 0 }}>
+                                                New to MeriPehchaan? <span style={{ color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}>Sign Up</span>
+                                            </p>
+                                        </form>
+                                    </motion.div>
+                                </motion.div>
                             )}
                         </AnimatePresence>
-                    </div>
-                </div>
-
-                {/* Right Column - Informational */}
-                <div style={{ flex: '1 1 40%', backgroundColor: '#0f172a', padding: '64px 48px', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ maxWidth: 400, margin: '0 auto' }}>
-                        <div style={{ display: 'inline-block', padding: '6px 12px', backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', borderRadius: 20, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', marginBottom: 24, border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                            CITIZEN ONBOARDING
-                        </div>
-                        <h2 style={{ fontSize: 32, fontWeight: 700, margin: '0 0 40px 0', lineHeight: 1.2 }}>
-                            What happens next?
-                        </h2>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>1</div>
-                                <div>
-                                    <h4 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px 0', color: 'white' }}>Profile Creation</h4>
-                                    <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.6 }}>Your basic demographic profile is created on the unified platform.</p>
-                                </div>
-                            </div>
-                            
-                            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>2</div>
-                                <div>
-                                    <h4 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px 0', color: 'white' }}>Connect SSO (Optional)</h4>
-                                    <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.6 }}>Link DigiLocker or Aadhaar to automatically verify your identity and pull your documents.</p>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>3</div>
-                                <div>
-                                    <h4 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 8px 0', color: 'white' }}>Personalized Discovery</h4>
-                                    <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.6 }}>The AI engine instantly evaluates your eligibility and recommends services tailored for you.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ marginTop: 64, padding: 20, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                                <ShieldCheck size={20} color="#10b981" />
-                                <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>Enterprise-Grade Security</span>
-                            </div>
-                            <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', lineHeight: 1.5 }}>
-                                Samadhan Path utilizes state-of-the-art encryption and adheres strictly to the DPDP Act guidelines to ensure your citizen data is protected at all times.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>

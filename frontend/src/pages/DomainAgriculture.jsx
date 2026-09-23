@@ -11,12 +11,7 @@ const DomainAgriculture = () => {
     
     React.useEffect(() => {
         const userStr = sessionStorage.getItem('user');
-        if (!userStr) {
-            window.location.href = '/login';
-            return;
-        }
-        const user = JSON.parse(userStr);
-        const id = user.master_id || 'SP-12963072';
+        const id = userStr ? (JSON.parse(userStr).master_id || 'SP-12963072') : 'SP-000001';
         setMasterId(id);
         getAgricultureProfile(id).then(setProfile).catch(console.error);
     }, []);
@@ -67,13 +62,22 @@ const DomainAgriculture = () => {
                         <div className="card-js" style={{ padding: 24, marginTop: 24 }}>
                             <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>Service Catalog</h3>
                             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'pmkisan' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => setSelectedService('pmkisan')}>
+                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'pmkisan' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); navigate('/login'); return; }
+                                    setSelectedService('pmkisan');
+                                }}>
                                     🌾 PM-Kisan Samman Nidhi
                                 </li>
-                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'insurance' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => setSelectedService('insurance')}>
+                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'insurance' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); navigate('/login'); return; }
+                                    setSelectedService('insurance');
+                                }}>
                                     ☔ Crop Insurance (Fasal Bima)
                                 </li>
-                                <li style={{ padding: '12px 0', cursor: 'pointer' }} onClick={() => setSelectedService('fertilizer')}>
+                                <li style={{ padding: '12px 0', cursor: 'pointer' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); navigate('/login'); return; }
+                                    setSelectedService('fertilizer');
+                                }}>
                                     🌱 Fertilizer Subsidy Request
                                 </li>
                             </ul>
@@ -86,7 +90,10 @@ const DomainAgriculture = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
                                 {/* Agriculture Subsidy - Fully Working Demo */}
                                 <div 
-                                    onClick={() => navigate('/agriculture/apply')}
+                                    onClick={() => {
+                                        if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); navigate('/login'); return; }
+                                        navigate('/agriculture/apply');
+                                    }}
                                     style={{
                                         background: 'white', borderRadius: 12, padding: 24, cursor: 'pointer',
                                         border: '1px solid var(--accent)', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',

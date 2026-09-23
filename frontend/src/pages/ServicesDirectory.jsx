@@ -81,6 +81,26 @@ const ServicesDirectory = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [activeLevel, setActiveLevel] = useState('All');
     const [onlineOnly, setOnlineOnly] = useState(false);
+    const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
+    const [authWarningPath, setAuthWarningPath] = useState(null);
+
+    const handleStartApplication = (path) => {
+        let userStr = sessionStorage.getItem('user');
+        let isLoggedIn = false;
+        
+        if (userStr && userStr !== 'null' && userStr !== 'undefined') {
+            try {
+                const userObj = JSON.parse(userStr);
+                if (userObj && userObj.role) isLoggedIn = true;
+            } catch (e) {}
+        }
+        
+        if (!isLoggedIn) {
+            setAuthWarningPath(path);
+        } else {
+            navigate(path);
+        }
+    };
 
     const filteredServices = ALL_SERVICES.filter(srv => {
         const matchesSearch = search === '' || 
@@ -279,7 +299,7 @@ const ServicesDirectory = () => {
                             {/* Actions */}
                             <div style={{ display: 'flex', gap: 12, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
                                 <button 
-                                    onClick={() => navigate(srv.path)}
+                                    onClick={() => handleStartApplication(srv.path)}
                                     style={{ 
                                         flex: 2, padding: '10px 0', backgroundColor: 'transparent', color: '#2563eb', 
                                         border: '1px solid #bfdbfe', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer',
@@ -291,7 +311,7 @@ const ServicesDirectory = () => {
                                     Check Eligibility
                                 </button>
                                 <button 
-                                    onClick={() => navigate(srv.path)}
+                                    onClick={() => setSelectedServiceDetails(srv)}
                                     style={{ 
                                         flex: 1, padding: '10px 0', backgroundColor: '#f1f5f9', color: '#475569', 
                                         border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: 'pointer',
@@ -316,6 +336,101 @@ const ServicesDirectory = () => {
                     )}
                 </div>
             </div>
+
+            {selectedServiceDetails && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24
+                }}>
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: 16, width: '100%', maxWidth: 600,
+                        padding: 32, position: 'relative', maxHeight: '90vh', overflowY: 'auto'
+                    }}>
+                        <button 
+                            onClick={() => setSelectedServiceDetails(null)}
+                            style={{ position: 'absolute', top: 16, right: 16, background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748b' }}
+                        >×</button>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: '#f1f5f9', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {CATEGORY_ICONS[selectedServiceDetails.category]}
+                            </div>
+                            <div>
+                                <h2 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: 0 }}>{selectedServiceDetails.title}</h2>
+                                <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 0 0' }}>{selectedServiceDetails.ministry}</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#2563eb', backgroundColor: '#eff6ff', padding: '4px 8px', borderRadius: 4 }}>{selectedServiceDetails.level}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: selectedServiceDetails.integration === 'Live Integration' ? '#059669' : '#0284c7', backgroundColor: selectedServiceDetails.integration === 'Live Integration' ? '#d1fae5' : '#e0f2fe', padding: '4px 8px', borderRadius: 4 }}>
+                                {selectedServiceDetails.integration}
+                            </span>
+                        </div>
+
+                        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1e293b', marginBottom: 8 }}>About this Service</h3>
+                        <p style={{ fontSize: 15, color: '#475569', lineHeight: 1.6, marginBottom: 24 }}>{selectedServiceDetails.desc}</p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+                            <div style={{ backgroundColor: '#f8fafc', padding: 16, borderRadius: 8 }}>
+                                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Eligibility Rule</div>
+                                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 500 }}>{selectedServiceDetails.eligibility}</div>
+                            </div>
+                            <div style={{ backgroundColor: '#f8fafc', padding: 16, borderRadius: 8 }}>
+                                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', marginBottom: 4 }}>Required Docs</div>
+                                <div style={{ fontSize: 14, color: '#0f172a', fontWeight: 500 }}>{selectedServiceDetails.docs}</div>
+                            </div>
+                        </div>
+
+                        <button 
+                            onClick={() => handleStartApplication(selectedServiceDetails.path)}
+                            style={{ width: '100%', padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 16, cursor: 'pointer' }}
+                        >
+                            Start Application / Check Eligibility
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {authWarningPath && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24
+                }}>
+                    <div style={{
+                        backgroundColor: 'white', borderRadius: 16, width: '100%', maxWidth: 400,
+                        padding: 32, textAlign: 'center'
+                    }}>
+                        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>Authentication Required</h2>
+                        <p style={{ color: '#475569', marginBottom: 24, lineHeight: 1.5 }}>
+                            You need to be logged in to start an application or check your eligibility. Would you like to login or register?
+                        </p>
+                        <div style={{ display: 'flex', gap: 12, flexDirection: 'column' }}>
+                            <button 
+                                onClick={() => navigate('/login')}
+                                style={{ width: '100%', padding: '12px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                Login
+                            </button>
+                            <button 
+                                onClick={() => navigate('/register')}
+                                style={{ width: '100%', padding: '12px', backgroundColor: '#f1f5f9', color: '#0f172a', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                Create an Account
+                            </button>
+                            <button 
+                                onClick={() => setAuthWarningPath(null)}
+                                style={{ width: '100%', padding: '12px', backgroundColor: 'transparent', color: '#64748b', border: 'none', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

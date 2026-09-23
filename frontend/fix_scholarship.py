@@ -1,66 +1,100 @@
 import re
 
-with open(r'c:\Users\Shivansh\Desktop\Samadhan Path\frontend\src\pages\ScholarshipApplication.jsx', 'r', encoding='utf-8') as f:
+path = r'c:\Users\Shivansh\Desktop\Samadhan Path\frontend\src\pages\ScholarshipApplication.jsx'
+with open(path, 'r', encoding='utf-8') as f:
     content = f.read()
 
-# 1. Add import
-if "import ConsentOtpModal" not in content:
-    content = content.replace("import { API_URL } from '../services/api';", "import { API_URL } from '../services/api';\nimport ConsentOtpModal from '../components/ConsentOtpModal';")
+# 1. Update STEPS array
+old_steps = """const STEPS = [
+    '1. Overview',
+    '2. Personal Info',
+    '3. Education Info',
+    '4. Financial Info',
+    '5. Documents',
+    '6. Consent & OTP',
+    '7. Review',
+    '8. Submit'
+];"""
 
-# 2. Add isOtpModalOpen state
-if "const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);" not in content:
-    content = content.replace("const [otpSent, setOtpSent] = useState(false);", "const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);\n    const [otpSent, setOtpSent] = useState(false);")
+new_steps = """const STEPS = [
+    '1. Overview',
+    '2. Consent & OTP',
+    '3. Personal Info',
+    '4. Education Info',
+    '5. Financial Info',
+    '6. Documents',
+    '7. Review',
+    '8. Submit'
+];"""
 
-# 3. Replace the Consent & OTP UI block
-# Wait, the UI block for currentStep === 5 is quite big. Let's find it.
-start_str = "{/* STEP 6: CONSENT & OTP */}"
-end_str = "{/* STEP 7: REVIEW */}"
+content = content.replace(old_steps, new_steps)
 
-start_idx = content.find(start_str)
-end_idx = content.find(end_str)
+# 2. Extract step blocks using regex
+# We will just do a simple replacement for the step indices and button targets.
 
-if start_idx != -1 and end_idx != -1:
-    old_step_6 = content[start_idx:end_idx]
-    
-    new_step_6 = """{/* STEP 6: CONSENT & OTP */}
-                    {currentStep === 5 && (
-                        <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 6: Security & Consent</h3>
-                            <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
-                                To fetch your income and academic records directly from the Digilocker and Revenue Department APIs, we require your explicit consent.
-                            </p>
-                            
-                            <div style={{ background: '#f8fafc', padding: 20, borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 24 }}>
-                                <h4 style={{ margin: '0 0 12px 0', fontSize: 14 }}>Data Sharing Request</h4>
-                                <p style={{ fontSize: 13, marginBottom: 8 }}><strong>From:</strong> Revenue Department & Digilocker</p>
-                                <p style={{ fontSize: 13, marginBottom: 8 }}><strong>To:</strong> Education Department</p>
-                                <p style={{ fontSize: 13, marginBottom: 0 }}><strong>Purpose:</strong> {schemeType === 'LOAN' ? 'Education Loan Eligibility Verification' : 'Scholarship Eligibility Verification'}</p>
-                            </div>
+# STEP 0: Overview
+content = content.replace('onClick={() => setCurrentStep(1)}', 'onClick={() => setCurrentStep(1)}') # Wait, actually overview goes to step 1 (Consent now)
 
-                            <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
-                                <button onClick={() => setIsOtpModalOpen(true)} style={{ padding: '10px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Sign & Allow Data Sharing</button>
-                            </div>
+# Fix profile name display
+content = content.replace('{profile.name} 🔒', "{JSON.parse(sessionStorage.getItem('user') || '{}').name || profile.name} 🔒")
 
-                            <ConsentOtpModal 
-                                isOpen={isOtpModalOpen}
-                                onClose={() => setIsOtpModalOpen(false)}
-                                onVerify={(data) => {
-                                    setConsentToken(data);
-                                    setIsOtpModalOpen(false);
-                                    setCurrentStep(6);
-                                }}
-                                masterId={masterId}
-                                mobile={consentMobile}
-                                purpose={schemeType === 'LOAN' ? 'Education Loan Eligibility Verification' : 'Scholarship Eligibility Verification'}
-                                requestingDept="Education Department"
-                                sourceDept="Revenue Department & Digilocker"
-                            />
-                        </div>
-                    )}
+# We can manually swap the {currentStep === X} tags
+content = content.replace('{/* STEP 2: PERSONAL INFORMATION (AUTO-FILLED) */}', '{/* STEP 3: PERSONAL INFORMATION (AUTO-FILLED) */}')
+content = content.replace('{currentStep === 1 && (', '{currentStep === 2 && (')
 
-                    """
-    content = content[:start_idx] + new_step_6 + content[end_idx:]
+content = content.replace('{/* STEP 3: EDUCATION INFORMATION */}', '{/* STEP 4: EDUCATION INFORMATION */}')
+content = content.replace('{currentStep === 2 && (', '{currentStep === 3 && (')
 
-with open(r'c:\Users\Shivansh\Desktop\Samadhan Path\frontend\src\pages\ScholarshipApplication.jsx', 'w', encoding='utf-8') as f:
+content = content.replace('{/* STEP 4: FINANCIAL INFORMATION */}', '{/* STEP 5: FINANCIAL INFORMATION */}')
+content = content.replace('{currentStep === 3 && (', '{currentStep === 4 && (')
+
+content = content.replace('{/* STEP 5: DOCUMENTS & VERIFICATION */}', '{/* STEP 6: DOCUMENTS & VERIFICATION */}')
+content = content.replace('{currentStep === 4 && (', '{currentStep === 5 && (')
+
+content = content.replace('{/* STEP 6: CONSENT & OTP */}', '{/* STEP 2: CONSENT & OTP */}')
+# Need a special placeholder to avoid double replacement
+content = content.replace('{currentStep === 5 && (', '{currentStep === @@CONSENT_STEP@@ && (')
+
+
+# Now we also need to update the Back/Continue buttons inside each step!
+# Step 1 (Personal Info, now Step 2): Back goes to 1, Continue to 3
+content = content.replace(
+    "<button onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(2)}",
+    "<button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(3)}"
+)
+
+# Step 2 (Education, now Step 3): Back to 2, Continue to 4
+content = content.replace(
+    "<button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(3)}",
+    "<button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(4)}"
+)
+
+# Step 3 (Financial, now Step 4): Back to 3, Continue to 5
+content = content.replace(
+    "<button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(4)}",
+    "<button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(5)}"
+)
+
+# Step 4 (Documents, now Step 5): Back to 4, Continue to 6
+content = content.replace(
+    "<button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(5)}",
+    "<button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>\n                                <button onClick={() => setCurrentStep(6)}"
+)
+
+# Step 5 (Consent, now Step 1): Back to 0. (Wait, it didn't have a continue button, verify triggers setCurrentStep(6))
+content = content.replace(
+    "onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>",
+    "onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>"
+)
+
+# Update the Consent Verify success logic to go to step 2 instead of 6
+content = content.replace('setCurrentStep(6); // Proceed to Review', 'setCurrentStep(2); // Proceed to Personal Info')
+
+
+# Finalize placeholder
+content = content.replace('@@CONSENT_STEP@@', '1')
+
+with open(path, 'w', encoding='utf-8') as f:
     f.write(content)
+
+print("Updated ScholarshipApplication.jsx successfully.")

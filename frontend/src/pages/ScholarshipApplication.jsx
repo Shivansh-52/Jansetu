@@ -6,11 +6,11 @@ import ConsentOtpModal from '../components/ConsentOtpModal';
 
 const STEPS = [
     '1. Overview',
-    '2. Personal Info',
-    '3. Education Info',
-    '4. Financial Info',
-    '5. Documents',
-    '6. Consent & OTP',
+    '2. Consent & OTP',
+    '3. Personal Info',
+    '4. Education Info',
+    '5. Financial Info',
+    '6. Documents',
     '7. Review',
     '8. Submit'
 ];
@@ -51,7 +51,11 @@ const ScholarshipApplication = () => {
 
     useEffect(() => {
         const userStr = sessionStorage.getItem('user');
-        const mId = sessionStorage.getItem('masterId') || (userStr ? JSON.parse(userStr).master_id : 'SP-000001');
+        let mId = sessionStorage.getItem('masterId');
+        if (!mId) {
+            const parsedUser = userStr ? JSON.parse(userStr) : null;
+            mId = parsedUser?.master_id || 'SP-000001';
+        }
         setMasterId(mId);
 
         // Fetch Profile & Documents
@@ -113,7 +117,7 @@ const ScholarshipApplication = () => {
                 }
 
                 alert('✓ Consent verified and Common Data Model transformation executed!');
-                setCurrentStep(6); // Proceed to Review
+                setCurrentStep(2); // Proceed to Personal Info
             }
         } catch (err) {
             alert(err.response?.data?.message || 'OTP verification failed');
@@ -262,11 +266,11 @@ const ScholarshipApplication = () => {
                         </div>
                     )}
 
-                    {/* STEP 2: PERSONAL INFORMATION (AUTO-FILLED) */}
-                    {currentStep === 1 && (
+                    {/* STEP 3: PERSONAL INFO */}
+                    {currentStep === 2 && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 2: Personal Information</h3>
+                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 3: Personal Information</h3>
                                 <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
                                     ✓ Auto-filled securely via SamadhanPath API Gateway 🔒
                                 </span>
@@ -274,7 +278,7 @@ const ScholarshipApplication = () => {
 
                             {profile && (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, background: '#f8fafc', padding: 20, borderRadius: 8, fontSize: 13, marginBottom: 24, border: '1px solid #e2e8f0' }}>
-                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Full Name</label><div style={{ fontWeight: 600 }}>{profile.name} 🔒</div></div>
+                                    <div><label style={{ fontSize: 11, color: '#64748b' }}>Full Name</label><div style={{ fontWeight: 600 }}>{JSON.parse(sessionStorage.getItem('user') || '{}').name || profile?.name} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Date of Birth</label><div style={{ fontWeight: 600 }}>{profile.dob} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Master ID</label><div style={{ fontWeight: 600 }}>{masterId} 🔒</div></div>
                                     <div><label style={{ fontSize: 11, color: '#64748b' }}>Category</label><div style={{ fontWeight: 600 }}>{profile.category} 🔒</div></div>
@@ -288,17 +292,17 @@ const ScholarshipApplication = () => {
                             )}
 
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
-                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
+                                <button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
                             </div>
                         </div>
                     )}
 
                     {/* STEP 3: EDUCATION INFORMATION (AUTO-FILLED) */}
-                    {currentStep === 2 && (
+                    {currentStep === 3 && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 3: Education & Academic Information</h3>
+                                <h3 style={{ fontSize: 18, margin: 0 }}>Step 4: Education & Academic Information</h3>
                                 <span style={{ background: '#ecfdf5', color: '#059669', fontSize: 11, padding: '4px 8px', borderRadius: 12, fontWeight: 600 }}>
                                     ✓ Auto-filled securely via SamadhanPath API Gateway 🔒
                                 </span>
@@ -320,16 +324,16 @@ const ScholarshipApplication = () => {
                             )}
 
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(1)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
-                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
+                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Continue →</button>
                             </div>
                         </div>
                     )}
 
-                    {/* STEP 4: FINANCIAL INFORMATION (PROMPTS ONLY MISSING INFO) */}
-                    {currentStep === 3 && (
+                    {/* STEP 5: FINANCIAL INFO */}
+                    {currentStep === 4 && (
                         <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 4: Financial Information & Missing Details</h3>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 5: Financial Information & Missing Details</h3>
                             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
                                 Profile fields were auto-filled. Please specify only the missing scheme-specific financial requirements:
                             </p>
@@ -379,16 +383,16 @@ const ScholarshipApplication = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(2)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
-                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Save & Continue →</button>
+                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(5)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Save & Continue →</button>
                             </div>
                         </div>
                     )}
 
-                    {/* STEP 5: DOCUMENTS CHECK */}
-                    {currentStep === 4 && (
+                    {/* STEP 6: DOCUMENTS */}
+                    {currentStep === 5 && (
                         <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 5: Document Vault Verification Status</h3>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 6: Document Vault Verification Status</h3>
                             <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>
                                 We checked your Government Document Vault. Existing documents are auto-linked:
                             </p>
@@ -423,16 +427,16 @@ const ScholarshipApplication = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <button onClick={() => setCurrentStep(3)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
-                                <button onClick={() => setCurrentStep(5)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Proceed to Consent →</button>
+                                <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Back</button>
+                                <button onClick={() => setCurrentStep(6)} style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Proceed to Review →</button>
                             </div>
                         </div>
                     )}
 
-                    {/* STEP 6: DATA SHARING & CONSENT MODAL */}
-                    {currentStep === 5 && (
+                    {/* STEP 2: CONSENT & OTP */}
+                    {currentStep === 1 && (
                         <div>
-                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 6: Data Sharing Request & Authorization</h3>
+                            <h3 style={{ fontSize: 18, marginBottom: 12 }}>Step 2: Data Sharing Request & Authorization</h3>
                             
                             <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: 20, borderRadius: 12, marginBottom: 24 }}>
                                 <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>DATA SHARING REQUEST</div>
@@ -470,7 +474,7 @@ const ScholarshipApplication = () => {
                                     />
                                     
                                     <div style={{ display: 'flex', gap: 12 }}>
-                                        <button onClick={() => setCurrentStep(4)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
+                                        <button onClick={() => setCurrentStep(0)} style={{ padding: '10px 20px', background: 'white', border: '1px solid #cbd5e1', borderRadius: 8 }}>Decline & Back</button>
                                         <button onClick={() => { handleSendOtp(); }} style={{ padding: '10px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 8, fontWeight: 600 }}>Generate OTP to Mobile →</button>
                                     </div>
                                 </div>
@@ -511,7 +515,7 @@ const ScholarshipApplication = () => {
                                 <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #cbd5e1' }}>
                                     <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 12, fontSize: 14 }}>1. Applicant Profile</div>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                        <div><strong>Name:</strong> {profile?.name}</div>
+                                        <div><strong>Name:</strong> {JSON.parse(sessionStorage.getItem('user') || '{}').name || profile?.name}</div>
                                         <div><strong>Master ID:</strong> {masterId}</div>
                                         <div><strong>Mobile:</strong> {profile?.mobile || 'Verified'}</div>
                                         <div><strong>Category:</strong> {profile?.category}</div>

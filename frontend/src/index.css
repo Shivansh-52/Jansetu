@@ -764,3 +764,41 @@ select.input-js {
         transform: translateX(0);
     }
 }/* trigger rebuild */
+
+
+/* ============================================
+   Google Translate Widget Styling
+   ============================================ */
+.goog-te-gadget {
+    font-size: 0px !important; 
+    color: transparent !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+    font-size: 14px !important;
+    color: var(--text-primary) !important;
+    background: var(--surface) !important;
+    border: 1px solid rgba(14, 26, 51, 0.12) !important;
+    border-radius: 60px !important;
+    padding: 6px 12px !important;
+    outline: none !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+.goog-te-gadget .goog-te-combo:hover {
+    background: var(--bg-secondary) !important;
+}
+
+.goog-logo-link {
+    display: none !important;
+}
+.goog-te-gadget img {
+    display: none !important;
+}
+.goog-te-banner-frame {
+    display: none !important;
+}
+body {
+    top: 0px !important;
+}

@@ -91,6 +91,12 @@ const DomainEducation = () => {
     };
 
     const requestDocVerification = async (docType, docNumber) => {
+        const userStr = sessionStorage.getItem('user');
+        if (!userStr) {
+            alert("Please log in to use this service.");
+            navigate('/login');
+            return;
+        }
         addInteropLog('Citizen', 'Request Document Verification', `Triggered for ${docType.toUpperCase()}`);
         try {
             const res = await axios.post(`${API_URL}/education/verify-document`, {
@@ -110,6 +116,12 @@ const DomainEducation = () => {
     };
 
     const startApplicationWizard = (schemeId, schemeName, schemeType) => {
+        const userStr = sessionStorage.getItem('user');
+        if (!userStr) {
+            alert("Please log in to apply for this scheme.");
+            navigate('/login');
+            return;
+        }
         addInteropLog('Education Portal', 'Application Initiated', `Scheme Selected: ${schemeName}`);
         navigate(`/education/scholarship?scheme_id=${schemeId}&scheme_type=${schemeType}&scheme_name=${encodeURIComponent(schemeName)}`);
     };

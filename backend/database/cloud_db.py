@@ -37,19 +37,31 @@ def init_cloud_dbs():
             # We will use their existing 'education_records' table
             # but we need to ensure it has a master_id column to link it
             conn.execute(text('''
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS master_id VARCHAR(100) UNIQUE;
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS institution VARCHAR(255);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS scholarship_status VARCHAR(50);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS student_id VARCHAR(50);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS course VARCHAR(100);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS year_semester VARCHAR(100);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS enrollment_number VARCHAR(100);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS academic_aggregate VARCHAR(50);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS attendance_status VARCHAR(50);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS study_mode VARCHAR(100);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS institution_ranking VARCHAR(100);
-                ALTER TABLE education_records ADD COLUMN IF NOT EXISTS last_passed_exam VARCHAR(100);
+                CREATE TABLE IF NOT EXISTS education_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    master_id VARCHAR(100) UNIQUE,
+                    student_name VARCHAR(255),
+                    degree VARCHAR(100),
+                    graduation_year INTEGER,
+                    gpa FLOAT
+                );
             '''))
+            try:
+                conn.execute(text('''
+                    ALTER TABLE education_records ADD COLUMN institution VARCHAR(255);
+                    ALTER TABLE education_records ADD COLUMN scholarship_status VARCHAR(50);
+                    ALTER TABLE education_records ADD COLUMN student_id VARCHAR(50);
+                    ALTER TABLE education_records ADD COLUMN course VARCHAR(100);
+                    ALTER TABLE education_records ADD COLUMN year_semester VARCHAR(100);
+                    ALTER TABLE education_records ADD COLUMN enrollment_number VARCHAR(100);
+                    ALTER TABLE education_records ADD COLUMN academic_aggregate VARCHAR(50);
+                    ALTER TABLE education_records ADD COLUMN attendance_status VARCHAR(50);
+                    ALTER TABLE education_records ADD COLUMN study_mode VARCHAR(100);
+                    ALTER TABLE education_records ADD COLUMN institution_ranking VARCHAR(100);
+                    ALTER TABLE education_records ADD COLUMN last_passed_exam VARCHAR(100);
+                '''))
+            except Exception:
+                pass
         print("[Cloud DB] Linked to existing Neon PostgreSQL (education_records)")
     else:
         print("[Cloud DB] Warning: POSTGRES_EDUCATION_URL not set")
@@ -131,9 +143,9 @@ def insert_agriculture_profile(profile_data):
             text('''
                 INSERT INTO agriculture_profiles (master_id, farmer_id, land_parcels)
                 VALUES (:master_id, :farmer_id, :land_parcels)
-                ON DUPLICATE KEY UPDATE 
-                    farmer_id = VALUES(farmer_id),
-                    land_parcels = VALUES(land_parcels)
+                ON CONFLICT(master_id) DO UPDATE SET 
+                    farmer_id = EXCLUDED.farmer_id,
+                    land_parcels = EXCLUDED.land_parcels
             '''),
             {
                 "master_id": profile_data.get("master_id"),

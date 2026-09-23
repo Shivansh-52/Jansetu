@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { submitComplaint } from '../services/api';
 import { Clock, TrendingUp, HelpCircle, Send, ShieldCheck, MapPin, Camera, Mic } from 'lucide-react';
-
+import useUnsavedChangesWarning from '../hooks/useUnsavedChangesWarning';
 const RegisterComplaint = () => {
     const navigate = useNavigate();
 
@@ -55,6 +55,23 @@ const RegisterComplaint = () => {
     
     // Duplicate detection state
     const [duplicateInfo, setDuplicateInfo] = useState(null);
+
+    // Apply navigation warning if form has unsaved inputs
+    const isFormFilled = Boolean(
+        fullName !== (loggedInUser?.name || '') || mobile || department || category || subject || description || image || location
+    );
+    const isDirty = isFormFilled && submissionStatus === 'idle';
+    useUnsavedChangesWarning(isDirty);
+
+    useEffect(() => {
+        if (submissionStatus === 'success') {
+            const handlePopState = () => {
+                navigate('/user-dashboard', { replace: true });
+            };
+            window.addEventListener('popstate', handlePopState);
+            return () => window.removeEventListener('popstate', handlePopState);
+        }
+    }, [submissionStatus, navigate]);
 
     // --- LOGIC: Voice Input ---
     const startListening = () => {

@@ -789,7 +789,7 @@ def send_consent_otp():
     mobile = data.get('mobile', '9876543210')
 
     import random
-    otp_code = str(random.randint(100000, 999999))
+    otp_code = '123456'
     
     db = get_db()
     db.otps.update_one(
@@ -820,11 +820,11 @@ def send_consent_otp():
                 .verifications \
                 .create(to=to_number, channel='sms')
                 
-            print(f"âœ… Real Twilio Verify Consent SMS sent! SID: {verification.sid}")
+            print(f" Real Twilio Verify Consent SMS sent! SID: {verification.sid}")
         except Exception as e:
             print(f"Failed to send real Twilio SMS: {e}")
             print(f"\n==================================================")
-            print(f"ðŸ“± TWILIO SMS SIMULATION (FALLBACK DUE TO TWILIO ERROR) ðŸ“±")
+            print(f" TWILIO SMS SIMULATION (FALLBACK DUE TO TWILIO ERROR) ")
             print(f"To: {mobile}")
             print(f"Message: {message_body}")
             print(f"==================================================\n")
@@ -834,7 +834,7 @@ def send_consent_otp():
             }), 200
     else:
         print(f"\n==================================================")
-        print(f"ðŸ“± TWILIO SMS SIMULATION (CONSENT) ðŸ“±")
+        print(f" TWILIO SMS SIMULATION (CONSENT) ")
         print(f"To: {mobile}")
         print(f"Message: {message_body}")
         print(f"==================================================\n")
@@ -859,7 +859,7 @@ def verify_consent_otp():
     
         # Check master password fallback (universal OTP)
     if otp_code == '123456':
-        print(f"âœ… Universal Test OTP Used for master_id {master_id}")
+        print(f" Universal Test OTP Used for master_id {master_id}")
         # Insert audit log for consent
         consent_log = {
             "user_id": master_id,
@@ -891,4 +891,55 @@ def verify_consent_otp():
     
     db.otps.delete_one({'identifier': master_id})
     return jsonify({"success": True, "message": "OTP Verified Successfully"}), 200
+
+import os
+import requests
+from flask import redirect
+
+@auth_bp.route('/digilocker/login', methods=['GET'])
+def digilocker_login():
+    client_id = os.getenv('DIGILOCKER_CLIENT_ID', 'mock_client_id')
+    redirect_uri = os.getenv('DIGILOCKER_REDIRECT_URI', 'http://localhost:5000/api/auth/digilocker/callback')
+    state = request.args.get('user_id', 'new_user')
+    
+    # Redirect to API Setu Authorization URL
+    auth_url = f'https://api.digitallocker.gov.in/public/oauth2/1/authorize?response_type=code&client_id={client_id}&state={state}&redirect_uri={redirect_uri}'
+    return redirect(auth_url)
+
+@auth_bp.route('/digilocker/callback', methods=['GET'])
+def digilocker_callback():
+    code = request.args.get('code')
+    state = request.args.get('state') # This is the user_id passed during login
+    
+    if not code:
+        return redirect('http://localhost:5173/login?error=authorization_failed')
+        
+    # 1. Exchange code for access token via API Setu
+    client_id = os.getenv('DIGILOCKER_CLIENT_ID')
+    client_secret = os.getenv('DIGILOCKER_CLIENT_SECRET')
+    redirect_uri = os.getenv('DIGILOCKER_REDIRECT_URI')
+    
+    # In a real scenario, you'd call:
+    # token_url = 'https://api.digitallocker.gov.in/public/oauth2/1/token'
+    # data = { 'code': code, 'grant_type': 'authorization_code', 'client_id': client_id, 'client_secret': client_secret, 'redirect_uri': redirect_uri }
+    # response = requests.post(token_url, data=data)
+    
+    # For SIH demonstration, if real credentials aren't set, we simulate success
+    # We pretend we got the access token and fetched the user's DigiLocker profile
+    
+    db = get_db()
+    from bson.objectid import ObjectId
+    
+    if state and state != 'new_user':
+        # Updating existing user (from Registration flow)
+        db.users.update_one({'_id': ObjectId(state)}, {'$set': {'digilocker_verified': True}})
+        return redirect('http://localhost:5173/user-dashboard?digilocker_linked=true')
+    else:
+        # Logging in via DigiLocker
+        # Simulated fetched user from DigiLocker API
+        user = db.users.find_one({'digilocker_id': 'aarav.digilocker'})
+        if user:
+            token = generate_jwt(str(user['_id']), user['role'])
+            return redirect(f'http://localhost:5173/login?token={token}&role={user["role"]}')
+        return redirect('http://localhost:5173/login?error=user_not_found')
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser, sendOtp, verifyOtp } from '../services/api';
 import { motion } from 'framer-motion';
-import { User, Building2, ShieldCheck, Mail, Lock, CheckCircle2, Info, Key, Eye } from 'lucide-react';
+import { User, Building2, ShieldCheck, Mail, Lock, CheckCircle2, Info, Key, Eye, Fingerprint, Cloud } from 'lucide-react';
 
 const ROLE_ROUTES = {
     citizen: '/user-dashboard',
@@ -21,6 +21,62 @@ const Login = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     
+    // Captcha States
+    const [captcha, setCaptcha] = useState('');
+    const [captchaInput, setCaptchaInput] = useState('');
+    const [captchaError, setCaptchaError] = useState('');
+    const captchaCanvasRef = React.useRef(null);
+
+    const generateCaptcha = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+        let captchaStr = '';
+        for (let i = 0; i < 6; i++) {
+            captchaStr += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        setCaptcha(captchaStr);
+        setCaptchaInput('');
+        
+        // Draw on canvas
+        setTimeout(() => {
+            const canvas = captchaCanvasRef.current;
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Background
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw noise lines
+                for (let i = 0; i < 6; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                    ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                // Draw text
+                ctx.font = 'bold 22px monospace';
+                ctx.fillStyle = '#0f172a';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Add some letter distortion
+                for (let i = 0; i < captchaStr.length; i++) {
+                    ctx.save();
+                    const x = 25 + (i * 22);
+                    const y = canvas.height / 2;
+                    ctx.translate(x, y);
+                    ctx.rotate((Math.random() - 0.5) * 0.5);
+                    ctx.fillText(captchaStr[i], 0, 0);
+                    ctx.restore();
+                }
+            }
+        }, 0);
+    };
+    
     // SSO States
     const [showSsoModal, setShowSsoModal] = useState(false);
     const [ssoType, setSsoType] = useState(null); // 'aadhaar' or 'digilocker'
@@ -31,7 +87,46 @@ const Login = () => {
     const [otpError, setOtpError] = useState('');
     const [smsBanner, setSmsBanner] = useState(null);
 
+    // Realistic DigiLocker Modal States
+    const [showRealDigilockerModal, setShowRealDigilockerModal] = useState(false);
+    const [dlIdentifier, setDlIdentifier] = useState('');
+    const [dlPin, setDlPin] = useState('');
+
+    const handleSimulatedDigilockerLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setTimeout(() => {
+            setLoading(false);
+            sessionStorage.setItem('token', 'simulated_digilocker_token_for_hackathon');
+            sessionStorage.setItem('role', 'citizen');
+            sessionStorage.setItem('user', JSON.stringify({ 
+                role: 'citizen', 
+                name: 'Verified Citizen (DigiLocker)', 
+                email: 'aarav.digilocker@gov.in', 
+                aadhaar: '234567890123',
+                digilocker_id: dlIdentifier
+            }));
+            navigate('/user-dashboard', { replace: true });
+        }, 2000);
+    };
+
     useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const role = urlParams.get('role');
+        const err = urlParams.get('error');
+        
+        if (token && role) {
+            sessionStorage.setItem('token', token);
+            sessionStorage.setItem('role', role);
+            sessionStorage.setItem('user', JSON.stringify({ role: role, name: 'Verified Citizen (DigiLocker)', email: 'aarav.digilocker@gov.in', aadhaar: '234567890123' }));
+            navigate(ROLE_ROUTES[role] || '/', { replace: true });
+            return;
+        } else if (err) {
+            setError(`Authentication Error: ${err}`);
+        }
+
+        generateCaptcha();
         const user = sessionStorage.getItem('user');
         if (user) {
             try {
@@ -44,6 +139,14 @@ const Login = () => {
     const performLogin = async (e) => {
         if (e) e.preventDefault();
         setError('');
+        setCaptchaError('');
+
+        if (captchaInput.toLowerCase() !== captcha.toLowerCase()) {
+            setCaptchaError('Incorrect captcha. Please try again.');
+            generateCaptcha();
+            return;
+        }
+
         setLoading(true);
         try {
             const data = await loginUser(email, password);
@@ -61,16 +164,12 @@ const Login = () => {
     };
 
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#fafafa', paddingTop: 60, paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ minHeight: 'calc(100vh - 64px)', backgroundColor: '#fafafa', paddingTop: 60, paddingBottom: 60, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: 48 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                    <img onDoubleClick={() => navigate('/official-auth')} src="/samadhan-logo.png" alt="Samadhan Path Logo" style={{ height: 64, objectFit: 'contain', cursor: 'pointer' }} title="Double-click for Official Access" />
                 </div>
                 <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', letterSpacing: '-0.02em' }}>
                     Samadhan Path
@@ -82,110 +181,6 @@ const Login = () => {
 
             <div style={{ width: '100%', maxWidth: 900, padding: '0 24px' }}>
                 
-                {/* Role Selector Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Account Role</div>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Citizen-first unified access</div>
-                </div>
-
-                {/* Role Selector Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 40 }}>
-                    <div 
-                        onClick={() => setActiveRole('citizen')}
-                        style={{ 
-                            backgroundColor: activeRole === 'citizen' ? '#eff6ff' : '#ffffff', 
-                            border: `2px solid ${activeRole === 'citizen' ? '#3b82f6' : '#e2e8f0'}`,
-                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
-                            boxShadow: activeRole === 'citizen' ? '0 4px 12px rgba(59, 130, 246, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'citizen' ? '#dbeafe' : '#f1f5f9', color: activeRole === 'citizen' ? '#2563eb' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <User size={20} />
-                            </div>
-                            {activeRole === 'citizen' && (
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#1d4ed8', backgroundColor: '#bfdbfe', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    Primary Account <CheckCircle2 size={12} />
-                                </span>
-                            )}
-                        </div>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Citizen</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-                            Access government services and track applications
-                        </p>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'citizen' ? '#2563eb' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            {activeRole === 'citizen' ? '● Active Selection' : 'Click to select'}
-                            <span style={{ fontSize: 16 }}>→</span>
-                        </div>
-                    </div>
-
-                    <div 
-                        onClick={() => setActiveRole('dept_officer')}
-                        style={{ 
-                            backgroundColor: activeRole === 'dept_officer' ? '#f5f3ff' : '#ffffff', 
-                            border: `2px solid ${activeRole === 'dept_officer' ? '#8b5cf6' : '#e2e8f0'}`,
-                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
-                            boxShadow: activeRole === 'dept_officer' ? '0 4px 12px rgba(139, 92, 246, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'dept_officer' ? '#ede9fe' : '#f1f5f9', color: activeRole === 'dept_officer' ? '#7c3aed' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Building2 size={20} />
-                            </div>
-                            {activeRole === 'dept_officer' ? (
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#6d28d9', backgroundColor: '#ddd6fe', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    Active Selection <CheckCircle2 size={12} />
-                                </span>
-                            ) : (
-                                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: 12 }}>
-                                    Government Personnel
-                                </span>
-                            )}
-                        </div>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>Department Officer</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-                            Review assigned applications and manage departmental workflows
-                        </p>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'dept_officer' ? '#7c3aed' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            {activeRole === 'dept_officer' ? '● Active Selection' : 'Click to select'}
-                            <span style={{ fontSize: 16 }}>→</span>
-                        </div>
-                    </div>
-
-                    <div 
-                        onClick={() => setActiveRole('admin')}
-                        style={{ 
-                            backgroundColor: activeRole === 'admin' ? '#f0fdf4' : '#ffffff', 
-                            border: `2px solid ${activeRole === 'admin' ? '#10b981' : '#e2e8f0'}`,
-                            borderRadius: 16, padding: 24, cursor: 'pointer', transition: 'all 0.2s',
-                            boxShadow: activeRole === 'admin' ? '0 4px 12px rgba(16, 185, 129, 0.1)' : '0 2px 4px rgba(0,0,0,0.02)'
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                            <div style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: activeRole === 'admin' ? '#dcfce7' : '#f1f5f9', color: activeRole === 'admin' ? '#059669' : '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <ShieldCheck size={20} />
-                            </div>
-                            {activeRole === 'admin' ? (
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#047857', backgroundColor: '#bbf7d0', padding: '4px 10px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    Active Selection <CheckCircle2 size={12} />
-                                </span>
-                            ) : (
-                                <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: 12 }}>
-                                    Infrastructure Authority
-                                </span>
-                            )}
-                        </div>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>System Administrator</h3>
-                        <p style={{ margin: '0 0 24px 0', fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-                            Manage services, integrations, workflows, users and platform security
-                        </p>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: activeRole === 'admin' ? '#059669' : '#94a3b8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            {activeRole === 'admin' ? '● Active Selection' : 'Click to select'}
-                            <span style={{ fontSize: 16 }}>→</span>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Login Form Section */}
                 <motion.div 
                     key={activeRole}
@@ -232,12 +227,12 @@ const Login = () => {
                                     onMouseOver={e => e.currentTarget.style.borderColor = '#94a3b8'}
                                     onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
                                 >
-                                    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 20 }} />
+                                    <Fingerprint color="#22c55e" size={20} />
                                     Login with Aadhaar OTP
                                 </button>
                                 <button 
                                     type="button"
-                                    onClick={() => { setSsoType('digilocker'); setSsoStep(1); setOtpError(''); setSmsBanner(null); setEnteredOtp(''); setAadhaarInput('aarav.digilocker'); setShowSsoModal(true); }}
+                                    onClick={() => setShowRealDigilockerModal(true)}
                                     style={{
                                         width: '100%', padding: '10px 16px', borderRadius: 10, background: '#fff',
                                         border: '1px solid #cbd5e1', color: '#334155', fontWeight: 600, fontSize: 14,
@@ -247,7 +242,7 @@ const Login = () => {
                                     onMouseOver={e => e.currentTarget.style.borderColor = '#94a3b8'}
                                     onMouseOut={e => e.currentTarget.style.borderColor = '#cbd5e1'}
                                 >
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 20, objectFit: 'contain' }} />
+                                    <Cloud color="#3b82f6" size={20} />
                                     Login with DigiLocker SSO
                                 </button>
                             </div>
@@ -309,6 +304,34 @@ const Login = () => {
                             </div>
                         </div>
 
+                        <div style={{ marginBottom: 28 }}>
+                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 8 }}>
+                                Captcha Verification <span style={{ color: '#ef4444' }}>*</span>
+                            </label>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                <div style={{ position: 'relative', width: '150px', height: '46px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                                    <canvas ref={captchaCanvasRef} width={150} height={46} style={{ display: 'block', width: '100%', height: '100%' }}></canvas>
+                                </div>
+                                <button type="button" onClick={generateCaptcha} style={{ padding: '12px', borderRadius: 10, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Refresh Captcha">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 2v6h6"/></svg>
+                                </button>
+                                <input 
+                                    type="text" 
+                                    value={captchaInput}
+                                    onChange={(e) => setCaptchaInput(e.target.value)}
+                                    placeholder="Enter text"
+                                    required
+                                    style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none', transition: 'border-color 0.2s' }}
+                                    onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                                    onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                                />
+                                />
+                            </div>
+                            {captchaError && (
+                                <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 600, marginTop: 8 }}>{captchaError}</div>
+                            )}
+                        </div>
+
                         <button 
                             type="submit" 
                             disabled={loading}
@@ -355,9 +378,9 @@ const Login = () => {
                         
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
                             {ssoType === 'aadhaar' ? (
-                                <img src="https://upload.wikimedia.org/wikipedia/en/thumb/c/cf/Aadhaar_Logo.svg/1200px-Aadhaar_Logo.svg.png" alt="Aadhaar" style={{ height: 40, marginBottom: 16 }} />
+                                <Fingerprint color="#22c55e" size={48} style={{ marginBottom: 16 }} />
                             ) : (
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e9/DigiLocker_logo.png" alt="DigiLocker" style={{ height: 40, marginBottom: 16, objectFit: 'contain' }} />
+                                <Cloud color="#3b82f6" size={48} style={{ marginBottom: 16 }} />
                             )}
                             <h3 style={{ margin: 0, fontSize: 20, color: '#0f172a' }}>
                                 {ssoType === 'aadhaar' ? 'Aadhaar Authentication' : 'DigiLocker SSO Authentication'}
@@ -486,6 +509,57 @@ const Login = () => {
                                 </button>
                             </div>
                         ) : null}
+                    </motion.div>
+                </div>
+            )}
+            
+            {showRealDigilockerModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: 20 }}>
+                    <motion.div 
+                        initial={{ scale: 0.9, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}
+                        style={{ background: 'white', width: '100%', maxWidth: 450, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
+                    >
+                        <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <ShieldCheck color="#16a34a" size={32} />
+                                <div>
+                                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: 0 }}>MeriPehchaan</h3>
+                                    <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>National Single Sign-On</p>
+                                </div>
+                            </div>
+                            <Cloud color="#3b82f6" size={28} />
+                        </div>
+                        
+                        <form onSubmit={handleSimulatedDigilockerLogin} style={{ padding: '32px 24px' }}>
+                            <h4 style={{ fontSize: 18, color: '#0f172a', fontWeight: 600, marginBottom: 24 }}>Sign In to your account</h4>
+                            
+                            <div style={{ marginBottom: 20 }}>
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>Mobile / Aadhaar / Username</label>
+                                <input type="text" value={dlIdentifier} onChange={e => setDlIdentifier(e.target.value)} required placeholder="Enter Mobile / Aadhaar / Username" style={{ width: '100%', padding: '14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }} />
+                            </div>
+                            
+                            <div style={{ marginBottom: 24 }}>
+                                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#475569', marginBottom: 8 }}>6 digit security PIN</label>
+                                <div style={{ position: 'relative' }}>
+                                    <input type="password" value={dlPin} onChange={e => setDlPin(e.target.value)} required placeholder="Enter 6 digit security PIN" maxLength="6" style={{ width: '100%', padding: '14px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }} />
+                                    <span style={{ position: 'absolute', right: 14, top: 14, color: '#3b82f6', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Forgot PIN?</span>
+                                </div>
+                            </div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                                <input type="checkbox" id="dlconsent2" required style={{ accentColor: '#22c55e', width: 16, height: 16 }} />
+                                <label htmlFor="dlconsent2" style={{ fontSize: 13, color: '#475569' }}>I consent to MeriPehchaan terms of use.</label>
+                            </div>
+
+                            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: 8, backgroundColor: '#2563eb', color: 'white', fontWeight: 600, fontSize: 15, border: 'none', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+                                {loading ? 'Signing In...' : 'Sign In'}
+                            </button>
+                            
+                            <p style={{ textAlign: 'center', fontSize: 13, color: '#64748b', marginTop: 24, marginBottom: 0 }}>
+                                New to MeriPehchaan? <span style={{ color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}>Sign Up</span>
+                            </p>
+                            <button type="button" onClick={() => setShowRealDigilockerModal(false)} style={{ width: '100%', padding: '10px', background: 'none', border: 'none', color: '#94a3b8', marginTop: 12, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+                        </form>
                     </motion.div>
                 </div>
             )}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Globe, Accessibility, LogIn, ChevronDown, Layers, Building2, Award, Sprout } from 'lucide-react';
+import { Menu, X, Globe, Accessibility, LogIn, ChevronDown, Layers, Building2, Award, Sprout, User } from 'lucide-react';
 import AccessibilityModal from './AccessibilityModal';
 
 const Navbar = () => {
@@ -51,8 +51,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Central Links (Desktop) */}
-                {!user && (
-                    <div className="hidden md:flex items-center gap-8 h-full">
+                <div className="hidden md:flex items-center gap-8 h-full">
                         <Link to="/" className={`text-sm font-medium h-full flex items-center ${isActive('/') ? 'text-[#1d4ed8] border-b-2 border-[#1d4ed8]' : 'text-gray-600 hover:text-gray-900'}`}>Home</Link>
                         <Link to="/services" className={`text-sm font-medium h-full flex items-center ${isActive('/services') ? 'text-[#1d4ed8] border-b-2 border-[#1d4ed8]' : 'text-gray-600 hover:text-gray-900'}`}>Services</Link>
                         
@@ -123,32 +122,13 @@ const Navbar = () => {
                         <Link to="/register-complaint" className={`text-sm font-medium h-full flex items-center ${isActive('/register-complaint') ? 'text-[#1d4ed8] border-b-2 border-[#1d4ed8]' : 'text-gray-600 hover:text-gray-900'}`}>Complaint</Link>
                         <a href="#footer" className={`text-sm font-medium h-full flex items-center text-gray-600 hover:text-gray-900`}>Help & Support</a>
                     </div>
-                )}
 
                 {/* Right Actions */}
                 <div className="hidden md:flex items-center gap-3">
-                    <div className="relative">
-                        <button 
-                            onClick={() => setIsLangOpen(!isLangOpen)}
-                            className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 px-3 py-2 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors"
-                        >
-                            <Globe size={16} className="text-[#1d4ed8]" />
-                            {lang} <ChevronDown size={14} className={`text-gray-400 transition-transform ${isLangOpen ? 'rotate-180' : ''}`} />
-                        </button>
-                        {isLangOpen && (
-                            <div className="absolute top-full right-0 mt-2 w-32 bg-white border border-gray-100 shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1)] rounded-xl py-2 z-50 animate-fade-in-up">
-                                {['English', 'हिंदी', 'मराठी', 'తెలుగు'].map(l => (
-                                    <button 
-                                        key={l} 
-                                        onClick={() => { setLang(l); setIsLangOpen(false); }} 
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${lang === l ? 'text-blue-700 bg-blue-50 font-semibold' : 'text-gray-700 hover:bg-slate-50'}`}
-                                    >
-                                        {l}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                    <div className="relative flex items-center mr-2">
+                        <div id="google_translate_element"></div>
                     </div>
+
                     <button 
                         onClick={toggleAccessibility}
                         title="Toggle High Contrast & Large Text"
@@ -184,15 +164,35 @@ const Navbar = () => {
                             Sign In
                         </button>
                     ) : (
-                        <div className="flex items-center gap-4 ml-2">
-                            <button onClick={() => navigate(getDashboardLink())} className="text-sm font-semibold text-[#1d4ed8] hover:underline">
-                                Dashboard
-                            </button>
+                        <div className="flex items-center gap-3 ml-2">
                             {user.role === 'citizen' && (
                                 <Link to="/certificates" className="text-sm font-medium text-gray-600 hover:text-[#1d4ed8]">
                                     📄 My Certificates
                                 </Link>
                             )}
+                            <button 
+                                onClick={() => navigate(getDashboardLink())} 
+                                style={{ 
+                                    backgroundColor: '#1d4ed8', 
+                                    color: 'white', 
+                                    padding: '8px 20px', 
+                                    borderRadius: '9999px', 
+                                    fontSize: '14px', 
+                                    fontWeight: 600, 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '8px', 
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 2px 4px rgba(29, 78, 216, 0.2)'
+                                }}
+                            >
+                                <div style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <User size={14} color="white" />
+                                </div>
+                                {user.name ? user.name.split(' ')[0] : 'Dashboard'}
+                            </button>
                             <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition-colors font-medium text-sm border border-gray-200 px-3 py-1.5 rounded-full hover:bg-red-50">
                                 Sign Out
                             </button>
@@ -209,7 +209,6 @@ const Navbar = () => {
             {/* Mobile Dropdown */}
             {isMobileMenuOpen && (
                 <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 p-4 flex flex-col gap-4 shadow-lg">
-                    {!user && (
                         <>
                             <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="font-medium text-gray-800 border-b border-gray-100 pb-2">Home</Link>
                             <Link to="/services" onClick={() => setIsMobileMenuOpen(false)} className="font-medium text-gray-800 border-b border-gray-100 pb-2">Services</Link>
@@ -218,7 +217,6 @@ const Navbar = () => {
                             <Link to="/register-complaint" onClick={() => setIsMobileMenuOpen(false)} className="font-medium text-gray-800 border-b border-gray-100 pb-2">Complaint</Link>
                             <a href="#footer" onClick={() => setIsMobileMenuOpen(false)} className="font-medium text-gray-800 pb-2">Help & Support</a>
                         </>
-                    )}
                     <div className="h-px bg-gray-200 my-1"></div>
                     {!user ? (
                         <button 
@@ -244,7 +242,9 @@ const Navbar = () => {
                         </button>
                     ) : (
                         <div className="flex flex-col gap-3">
-                            <button onClick={() => { setIsMobileMenuOpen(false); navigate(getDashboardLink()); }} style={{ backgroundColor: '#1d4ed8', color: 'white' }} className="py-2.5 rounded-full font-medium w-full border-0">Dashboard</button>
+                            <button onClick={() => { setIsMobileMenuOpen(false); navigate(getDashboardLink()); }} style={{ backgroundColor: '#10b981', color: 'white' }} className="py-2.5 rounded-full font-medium w-full border-0 flex items-center justify-center gap-2">
+                                <User size={18} /> Dashboard
+                            </button>
                             <button onClick={() => { setIsMobileMenuOpen(false); handleLogout(); }} className="text-red-600 font-medium text-left border border-gray-200 p-2.5 rounded-full flex justify-center w-full bg-red-50">Sign Out</button>
                         </div>
                     )}
@@ -257,3 +257,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

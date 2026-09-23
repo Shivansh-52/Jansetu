@@ -10,7 +10,6 @@ const DomainPublicServices = () => {
         catch { return null; }
     };
     const user = getUser();
-    if (!user) { window.location.href = '/login'; return null; }
 
     const handleApply = (e) => {
         e.preventDefault();
@@ -58,13 +57,22 @@ const DomainPublicServices = () => {
                         <div className="card-js" style={{ padding: 24, marginTop: 24 }}>
                             <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>Service Catalog</h3>
                             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'income' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => setSelectedService('income')}>
+                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'income' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); window.location.href = '/login'; return; }
+                                    setSelectedService('income');
+                                }}>
                                     📄 Apply for Income Certificate
                                 </li>
-                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'domicile' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => setSelectedService('domicile')}>
+                                <li style={{ padding: '12px 0', borderBottom: '1px solid var(--border-light)', cursor: 'pointer', color: selectedService === 'domicile' ? 'var(--accent)' : 'var(--text-primary)' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); window.location.href = '/login'; return; }
+                                    setSelectedService('domicile');
+                                }}>
                                     🏠 Apply for Domicile Certificate
                                 </li>
-                                <li style={{ padding: '12px 0', cursor: 'pointer' }} onClick={() => setSelectedService('caste')}>
+                                <li style={{ padding: '12px 0', cursor: 'pointer' }} onClick={() => {
+                                    if (!sessionStorage.getItem('user')) { alert("Please log in to use this service."); window.location.href = '/login'; return; }
+                                    setSelectedService('caste');
+                                }}>
                                     📝 Apply for Caste Certificate
                                 </li>
                             </ul>

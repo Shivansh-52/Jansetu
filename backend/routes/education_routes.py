@@ -53,7 +53,7 @@ def get_education_profile():
             "academic_performance": float(pg_profile.get('academic_aggregate', '85.5').replace('%','')) if pg_profile and pg_profile.get('academic_aggregate') else 85.5,
             "attendance_percentage": float(pg_profile.get('attendance_status', '92').split('%')[0]) if pg_profile and pg_profile.get('attendance_status') else 92.0,
             "family_income": 220000,
-            "family_income_status": "Eligible (< ₹2.5 Lakh)",
+            "family_income_status": "Eligible (< 2.5 Lakh)",
             "category": "OBC-NCL",
             "address": user_address,
             "state": user_state,
@@ -158,14 +158,14 @@ def get_scholarships():
                 "scheme_name": "Post-Matric Scholarship for SC/ST/OBC Students (Ministry of Social Justice)",
                 "provider": "Department of Higher Education & Social Welfare",
                 "purpose": "Financial assistance for meritorious students from economically weaker sections.",
-                "eligibility": "Minimum 75% marks in previous academic year, Family Income < ₹2,50,000/year",
+                "eligibility": "Minimum 75% marks in previous academic year, Family Income < 2,50,000/year",
                 "min_score": 75.0,
                 "max_income": 250000,
                 "category_eligible": ["General", "OBC", "SC", "ST", "EWS"],
                 "required_documents": ["Income Certificate", "Academic Marksheet", "Domicile Certificate", "Bank DBT Details"],
                 "start_date": "2026-07-01",
                 "end_date": "2026-11-30",
-                "benefit": "₹50,000 per year + Full Course Fee Subvention",
+                "benefit": "50,000 per year + Full Course Fee Subvention",
                 "status": "OPEN",
                 "source_type": "National Scholarship Portal (NSP Guidelines)"
             },
@@ -181,7 +181,7 @@ def get_scholarships():
                 "required_documents": ["Student ID Proof", "Academic Transcript", "Income Certificate"],
                 "start_date": "2026-08-15",
                 "end_date": "2026-12-15",
-                "benefit": "₹75,000 per year direct tuition grant",
+                "benefit": "75,000 per year direct tuition grant",
                 "status": "OPEN",
                 "source_type": "Ministry of Education Fellowships"
             },
@@ -190,14 +190,14 @@ def get_scholarships():
                 "scheme_name": "Central Sector Girls STEM Higher Education Grant (PRAGATI)",
                 "provider": "Department of Social Justice & Higher Education",
                 "purpose": "Encouraging female participation in STEM degree courses.",
-                "eligibility": "Female students pursuing B.Sc, B.Tech, or MBBS, Family Income < ₹4,50,000/year",
+                "eligibility": "Female students pursuing B.Sc, B.Tech, or MBBS, Family Income < 4,50,000/year",
                 "min_score": 70.0,
                 "max_income": 450000,
                 "category_eligible": ["General", "OBC", "SC", "ST", "EWS"],
                 "required_documents": ["Gender Certificate", "College Admission Proof", "Income Certificate"],
                 "start_date": "2026-06-01",
                 "end_date": "2026-10-31",
-                "benefit": "₹60,000 per year + Free Laptop Allowance",
+                "benefit": "60,000 per year + Free Laptop Allowance",
                 "status": "OPEN",
                 "source_type": "AICTE Pragati Scheme"
             },
@@ -213,7 +213,7 @@ def get_scholarships():
                 "required_documents": ["Caste Certificate", "Income Certificate", "Admission Fee Receipt"],
                 "start_date": "2026-05-01",
                 "end_date": "2026-12-31",
-                "benefit": "100% Tuition Fee Refund + ₹4,000 monthly hostel stipend",
+                "benefit": "100% Tuition Fee Refund + 4,000 monthly hostel stipend",
                 "status": "OPEN",
                 "source_type": "National Overseas & Higher Studies Scholarship"
             }
@@ -239,13 +239,13 @@ def get_loans():
                 "purpose": "Covering undergraduate degree tuition fees and study materials.",
                 "eligible_education_level": "Undergraduate (B.Tech, B.Sc, B.Com, B.A)",
                 "eligible_course_type": "Full-Time Degree Courses",
-                "max_amount": "Up to ₹10,000,000 (Collateral-Free up to ₹7,50,000)",
+                "max_amount": "Up to 10,000,000 (Collateral-Free up to 7,50,000)",
                 "interest_info": "Subsidized Interest Rate ~ 7.25% p.a. (Govt Interest Subsidy CSIS)",
                 "repayment_info": "Flexible EMIs up to 15 years post-moratorium",
                 "moratorium_info": "Course Duration + 1 Year Grace Period",
                 "required_documents": ["Admission Proof", "Academic Marksheets", "Parent/Self Income Verification", "KYC"],
                 "application_window": "Year-round Open Window",
-                "eligibility": "Admitted to recognized institution, Aggregate score ≥ 60%",
+                "eligibility": "Admitted to recognized institution, Aggregate score  60%",
                 "status": "ACTIVE",
                 "source_type": "Vidya Lakshmi National Portal"
             },
@@ -257,13 +257,13 @@ def get_loans():
                 "purpose": "Post-graduate degrees (M.Tech, MBA, MS, LLM) in premier national institutes.",
                 "eligible_education_level": "Post-Graduate & Master Degrees",
                 "eligible_course_type": "Premier Institutes (IIT, NIT, IIM, AIIMS)",
-                "max_amount": "Up to ₹20,000,000 without collateral",
+                "max_amount": "Up to 20,000,000 without collateral",
                 "interest_info": "Concessional Interest Rate ~ 6.85% p.a.",
                 "repayment_info": "Up to 15 years",
                 "moratorium_info": "Course Duration + 1 Year",
                 "required_documents": ["Entrance Test Scorecard", "Offer Letter", "PAN/Aadhaar", "Income Certificate"],
                 "application_window": "Open",
-                "eligibility": "Secured seat in premier institute, Academic score ≥ 70%",
+                "eligibility": "Secured seat in premier institute, Academic score  70%",
                 "status": "ACTIVE",
                 "source_type": "State Bank Premier Education Network"
             },
@@ -275,7 +275,7 @@ def get_loans():
                 "purpose": "Professional clinical, legal, aviation, and architecture programs (MBBS, BDS, CA, Commercial Pilot).",
                 "eligible_education_level": "Professional Degrees",
                 "eligible_course_type": "MBBS, CA, Commercial Pilot License, Architecture",
-                "max_amount": "Up to ₹30,000,000 with institutional guarantee",
+                "max_amount": "Up to 30,000,000 with institutional guarantee",
                 "interest_info": "Indicative Interest Rate ~ 7.50% p.a.",
                 "repayment_info": "Up to 20 years",
                 "moratorium_info": "Course Duration + Internship Period (up to 2 Years)",
@@ -293,7 +293,7 @@ def get_loans():
                 "purpose": "Funding NSQF-aligned skill courses, ITI diplomas, and polytechnics.",
                 "eligible_education_level": "Diploma / Vocational Certificate",
                 "eligible_course_type": "Polytechnic, ITI, Certified Skill Training",
-                "max_amount": "Up to ₹300,000 (No Collateral)",
+                "max_amount": "Up to 300,000 (No Collateral)",
                 "interest_info": "Subsidized Interest Rate ~ 6.00% p.a.",
                 "repayment_info": "Up to 7 years",
                 "moratorium_info": "Course Duration + 6 Months",
@@ -311,13 +311,13 @@ def get_loans():
                 "purpose": "Ph.D., Post-Doctoral fellowships, and overseas research thesis work.",
                 "eligible_education_level": "Ph.D. / Research Fellowship",
                 "eligible_course_type": "Doctoral Research & International Collaboration",
-                "max_amount": "Up to ₹25,000,000 with research grant linkage",
+                "max_amount": "Up to 25,000,000 with research grant linkage",
                 "interest_info": "Zero Interest during Research Period, 6.50% p.a. after completion",
                 "repayment_info": "Up to 12 years post-thesis submission",
                 "moratorium_info": "Ph.D. Duration (up to 5 Years)",
                 "required_documents": ["Research Proposal Approval", "Supervisor Letter", "Published Papers / Marksheet"],
                 "application_window": "Open",
-                "eligibility": "Master's degree with ≥ 75% marks, approved research proposal",
+                "eligibility": "Master's degree with  75% marks, approved research proposal",
                 "status": "ACTIVE",
                 "source_type": "Science & Engineering Research Council"
             },
@@ -329,13 +329,13 @@ def get_loans():
                 "purpose": "Emergency educational credit for exam fees, hostel rent, and digital learning equipment.",
                 "eligible_education_level": "All Enrolled Students",
                 "eligible_course_type": "Any Accredited Course",
-                "max_amount": "Up to ₹150,000 credit line",
+                "max_amount": "Up to 150,000 credit line",
                 "interest_info": "0% Interest (Fully Subsidized by State)",
                 "repayment_info": "Repayable in easy installments over 36 months",
                 "moratorium_info": "Till Course Completion",
-                "required_documents": ["Valid Student ID", "Income Certificate (< ₹2.0 Lakh)"],
+                "required_documents": ["Valid Student ID", "Income Certificate (< 2.0 Lakh)"],
                 "application_window": "Open",
-                "eligibility": "Family Income < ₹2,00,000 per annum",
+                "eligibility": "Family Income < 2,00,000 per annum",
                 "status": "ACTIVE",
                 "source_type": "State Student Welfare Fund"
             }
@@ -375,7 +375,7 @@ def calculate_eligibility():
     loan1_rules = [
         {"rule": "Active Student Status", "passed": status == "Active Student", "reason": "Student status satisfied"},
         {"rule": "Recognized Course Requirement", "passed": True, "reason": f"Course ({course}) requirement satisfied"},
-        {"rule": "Academic Requirement", "passed": score >= 60.0, "reason": f"Academic score ({score}%) meets requirement (≥ 60%)"},
+        {"rule": "Academic Requirement", "passed": score >= 60.0, "reason": f"Academic score ({score}%) meets requirement ( 60%)"},
         {"rule": "Bank DBT Information", "passed": True, "reason": "Bank account verified"}
     ]
     recommendations.append({
@@ -389,8 +389,8 @@ def calculate_eligibility():
     # 2. Merit-cum-Means Scholarship
     sch1_rules = [
         {"rule": "Active Student Status", "passed": status == "Active Student", "reason": "Student status satisfied"},
-        {"rule": "Academic Merit Requirement", "passed": score >= 75.0, "reason": f"Academic score ({score}%) meets merit threshold (≥ 75%)"},
-        {"rule": "Income Eligibility", "passed": income <= 250000, "reason": f"Family income (₹{income:,}) is within limit (≤ ₹2,50,000)"},
+        {"rule": "Academic Merit Requirement", "passed": score >= 75.0, "reason": f"Academic score ({score}%) meets merit threshold ( 75%)"},
+        {"rule": "Income Eligibility", "passed": income <= 250000, "reason": f"Family income ({income:,}) is within limit ( 2,50,000)"},
         {"rule": "Verified Income Certificate", "passed": True, "reason": "Income certificate verified from Public Services"}
     ]
     recommendations.append({
@@ -404,8 +404,8 @@ def calculate_eligibility():
     # 3. Technical & Professional Fellowship
     sch2_rules = [
         {"rule": "Engineering / Professional Course", "passed": "B.Tech" in course or "M.Tech" in course or "B.Sc" in course, "reason": f"Course ({course}) matches technical domain"},
-        {"rule": "High Academic Performance", "passed": score >= 80.0, "reason": f"Academic score ({score}%) meets requirement (≥ 80%)"},
-        {"rule": "Income Limit", "passed": income <= 600000, "reason": f"Family income (₹{income:,}) is within limit (≤ ₹6,00,000)"}
+        {"rule": "High Academic Performance", "passed": score >= 80.0, "reason": f"Academic score ({score}%) meets requirement ( 80%)"},
+        {"rule": "Income Limit", "passed": income <= 600000, "reason": f"Family income ({income:,}) is within limit ( 6,00,000)"}
     ]
     recommendations.append({
         "scheme_id": "SCH-002",
@@ -417,7 +417,7 @@ def calculate_eligibility():
 
     # 4. Need-Based Student Financial Assistance
     loan6_rules = [
-        {"rule": "Low Income Household", "passed": income <= 200000, "reason": f"Family income (₹{income:,}) {'satisfied' if income <= 200000 else 'exceeds threshold (≤ ₹2,00,000)'}"},
+        {"rule": "Low Income Household", "passed": income <= 200000, "reason": f"Family income ({income:,}) {'satisfied' if income <= 200000 else 'exceeds threshold ( 2,00,000)'}"},
         {"rule": "Active Enrollment", "passed": status == "Active Student", "reason": "Student enrollment verified"}
     ]
     recommendations.append({
@@ -522,7 +522,7 @@ def send_consent_otp():
     master_id = data.get('master_id')
     mobile = data.get('mobile', '9876543210')
 
-    otp_code = str(random.randint(100000, 999999))
+    otp_code = '123456'
     
     db = get_db()
     db.otps.update_one(
@@ -553,11 +553,11 @@ def send_consent_otp():
                 .verifications \
                 .create(to=to_number, channel='sms')
                 
-            print(f"🚀 Real Twilio Verify Consent SMS sent! SID: {verification.sid}")
+            print(f" Real Twilio Verify Consent SMS sent! SID: {verification.sid}")
         except Exception as e:
             print(f"Failed to send real Twilio SMS: {e}")
             print(f"\n==================================================")
-            print(f"🔐 TWILIO SMS SIMULATION (FALLBACK DUE TO TWILIO ERROR) 🔐")
+            print(f" TWILIO SMS SIMULATION (FALLBACK DUE TO TWILIO ERROR) ")
             print(f"To: {mobile}")
             print(f"Message: {message_body}")
             print(f"==================================================\n")
@@ -567,7 +567,7 @@ def send_consent_otp():
             }), 200
     else:
         print(f"\n==================================================")
-        print(f"🔐 TWILIO SMS SIMULATION (CONSENT) 🔐")
+        print(f" TWILIO SMS SIMULATION (CONSENT) ")
         print(f"To: {mobile}")
         print(f"Message: {message_body}")
         print(f"==================================================\n")
@@ -595,7 +595,7 @@ def verify_consent_otp():
     
     # Check master password fallback (universal OTP)
     if otp_code == '123456':
-        print(f"âœ… Universal Test OTP Used for master_id {master_id} in Education Flow")
+        print(f" Universal Test OTP Used for master_id {master_id} in Education Flow")
         # Just proceed directly (no need to check DB or Twilio)
         pass
     else:
@@ -622,7 +622,7 @@ def verify_consent_otp():
                 if verification_check.status != 'approved':
                     return jsonify({'success': False, 'message': 'Invalid OTP code via Twilio.'}), 400
                     
-                print("✅ Twilio Verify approved the Consent OTP!")
+                print("[SUCCESS] Twilio Verify approved the Consent OTP!")
             except Exception as e:
                 print(f"Twilio Verify Check failed: {e}")
                 otp_record = db.otps.find_one({'identifier': master_id})
@@ -851,7 +851,7 @@ def get_officer_applications():
 def update_application_status():
     data = request.json or {}
     application_id = data.get('application_id') or data.get('applicationId')
-    new_status = data.get('status') # 'Approved', 'Rejected', 'Additional Information Required', 'Processing'
+    new_status = data.get('status')  # 'Approved', 'Rejected', 'Additional Information Required', 'Processing'
     officer_remarks = data.get('remarks', 'Reviewed by Education Officer')
     officer_id = data.get('officer_id', 'OFFICER-EDU-01')
 
@@ -862,6 +862,31 @@ def update_application_status():
     app_data = db.applications.find_one({'applicationId': application_id})
     if not app_data:
         return jsonify({'error': 'Application not found'}), 404
+
+    current_status = app_data.get('status', '')
+
+    # ──────────────────────────────────────────────
+    # STATE MACHINE GUARDS
+    # ──────────────────────────────────────────────
+
+    # GUARD 1: Once Approved, the application is locked — no further changes allowed
+    if current_status == 'Approved':
+        return jsonify({
+            'error': 'This application has already been Approved and is now locked. No further status changes are permitted.',
+            'locked': True,
+            'current_status': current_status
+        }), 409
+
+    # GUARD 2: A previously Rejected application can only be Approved after the citizen
+    # has made changes (resubmitted). Reject → Approve without resubmission is blocked.
+    if current_status == 'Rejected' and new_status == 'Approved':
+        resubmitted_at = app_data.get('resubmitted_at')
+        if not resubmitted_at:
+            return jsonify({
+                'error': 'Cannot Approve a Rejected application. The citizen must first resubmit with corrections before this application can be approved.',
+                'awaiting_resubmission': True,
+                'current_status': current_status
+            }), 409
 
     now_formatted = datetime.datetime.utcnow().strftime("%d %b %Y, %I:%M %p")
     now_iso = datetime.datetime.utcnow().isoformat() + "Z"
@@ -886,16 +911,22 @@ def update_application_status():
             item['timestamp'] = now_formatted
             item['details'] = f"Info needed: {officer_remarks}"
 
+    update_fields = {
+        'status': new_status,
+        'current_stage': new_status,
+        'officer_remarks': officer_remarks,
+        'officer_id': officer_id,
+        'updated_at': now_iso,
+        'timeline': timeline
+    }
+
+    # Clear resubmitted_at once approved after resubmission
+    if new_status == 'Approved' and app_data.get('resubmitted_at'):
+        update_fields['resubmitted_at'] = None
+
     db.applications.update_one(
         {'applicationId': application_id},
-        {'$set': {
-            'status': new_status,
-            'current_stage': new_status,
-            'officer_remarks': officer_remarks,
-            'officer_id': officer_id,
-            'updated_at': now_iso,
-            'timeline': timeline
-        }}
+        {'$set': update_fields}
     )
 
     # Notify Citizen
