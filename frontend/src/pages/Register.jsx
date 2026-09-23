@@ -314,7 +314,6 @@ const Register = () => {
                                                 required
                                                 style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1px solid #cbd5e1', fontSize: 14, outline: 'none' }}
                                             />
-                                            />
                                         </div>
                                         {captchaError && (
                                             <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 600, marginTop: 8 }}>{captchaError}</div>

@@ -325,7 +325,6 @@ const Login = () => {
                                     onFocus={e => e.target.style.borderColor = '#3b82f6'}
                                     onBlur={e => e.target.style.borderColor = '#cbd5e1'}
                                 />
-                                />
                             </div>
                             {captchaError && (
                                 <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 600, marginTop: 8 }}>{captchaError}</div>
