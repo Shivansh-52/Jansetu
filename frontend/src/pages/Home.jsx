@@ -181,6 +181,14 @@ const Home = () => {
                             }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}>
                                 Find Services by Category <span style={{ color: '#94a3b8' }}>{'>'}</span>
                             </Link>
+                            <a href="#judge-corner" style={{
+                                backgroundColor: '#8b5cf6', color: 'white', padding: '12px 28px', 
+                                borderRadius: 8, fontWeight: 600, textDecoration: 'none',
+                                display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s',
+                                boxShadow: '0 4px 6px -1px rgba(139, 92, 246, 0.4)'
+                            }} onMouseOver={e => { e.currentTarget.style.backgroundColor = '#7c3aed'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseOut={e => { e.currentTarget.style.backgroundColor = '#8b5cf6'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+                                🏆 SIH Judge Tour Guide
+                            </a>
                         </div>
                     </Reveal>
                 </div>
@@ -744,6 +752,187 @@ const Home = () => {
                             </div>
                         </Reveal>
                     </div>
+                </div>
+            </section>
+
+            {/* ═══════════════════════════
+               SECTION 4.5: SIH JUDGES CORNER
+               ═══════════════════════════ */}
+            <section id="judge-corner" style={{ backgroundColor: '#ffffff', padding: '100px 20px' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+                    <Reveal>
+                        <div style={{ textAlign: 'center', marginBottom: 64 }}>
+                            <span style={{ 
+                                backgroundColor: '#f3e8ff', color: '#9333ea', padding: '6px 16px', 
+                                borderRadius: 9999, fontSize: 12, fontWeight: 700, letterSpacing: '0.05em', 
+                                textTransform: 'uppercase', display: 'inline-block', marginBottom: 16 
+                            }}>
+                                🏆 Smart India Hackathon 2026
+                            </span>
+                            <h2 style={{ fontSize: 'clamp(28px, 4vw, 36px)', fontWeight: 800, color: '#0f172a', margin: '0 0 12px 0', letterSpacing: '-0.02em' }}>
+                                SIH 2026: Solution Architecture & Technical Evaluation
+                            </h2>
+                            <p style={{ color: '#475569', fontSize: 18, maxWidth: 800, margin: '0 auto', lineHeight: 1.6 }}>
+                                A comprehensive technical deep-dive into the enterprise-grade architecture, interoperability frameworks, and security topologies driving Samadhan Path. Tailored for SIH evaluators assessing scalability, security, and innovation.
+                            </p>
+                        </div>
+                    </Reveal>
+
+                    {/* Key Features Section */}
+                    <div style={{ marginBottom: 80 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 32, borderBottom: '2px solid #e2e8f0', paddingBottom: 16 }}>
+                            1. Core Innovations & Scalability Mechanisms
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+                            {[
+                                { title: 'AI-Powered Orchestration Layer', icon: '🧠', desc: 'Leverages advanced NLP and semantic vector embeddings to map conversational, colloquial citizen queries directly to explicit government SOAP/REST endpoints, effectively bypassing bureaucratic navigational friction.' },
+                                { title: 'Distributed Middleware & Interoperability', icon: '🔗', desc: 'Employs a robust middleware adapter pattern to interface with highly siloed, legacy departmental databases, ensuring real-time data translation into a unified JSON schema without requiring underlying state infrastructure overhauls.' },
+                                { title: 'DPDP-Compliant Consent Topology', icon: '🔒', desc: 'Implements cryptographic consent artifacts governed by granular, time-bound access policies. Data Fiduciaries only release citizen data to Data Principals upon stringent, verifiable signature validation.' },
+                                { title: 'Deterministic Eligibility Engine', icon: '⚡', desc: 'A low-latency, deterministic rules-engine that pre-computes eligibility criteria (e.g., income brackets, regional domicile) against distributed state registries, minimizing redundant processing and server-side rejection rates.' },
+                                { title: 'Multi-lingual Voice-First UI', icon: '🗣️', desc: 'Integrates highly concurrent Speech-to-Text (STT) and Text-to-Speech (TTS) models optimized for regional dialects, drastically reducing the digital divide for vernacular populations.' },
+                                { title: 'Event-Driven Predictive Delivery', icon: '🎯', desc: 'Utilizes asynchronous event queues (e.g., Kafka/RabbitMQ) to publish demographic milestones (like reaching age 60) and subscribe to automated pension disbursement workflows.' }
+                            ].map((feature, idx) => (
+                                <Reveal key={idx} delay={idx * 0.1}>
+                                    <div style={{ backgroundColor: '#f8fafc', padding: 28, borderRadius: 16, border: '1px solid #e2e8f0', height: '100%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ fontSize: 36, marginBottom: 20 }}>{feature.icon}</div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 12 }}>{feature.title}</h4>
+                                        <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{feature.desc}</p>
+                                    </div>
+                                </Reveal>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Technical Architecture */}
+                    <div style={{ marginBottom: 80 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 32, borderBottom: '2px solid #e2e8f0', paddingBottom: 16 }}>
+                            2. System Architecture & High-Availability Workflow
+                        </h3>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+                            <Reveal>
+                                <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                                    <div style={{ backgroundColor: '#2563eb', color: 'white', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 18 }}>1</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Authentication & Zero-Trust Security Paradigm</h4>
+                                        <p style={{ color: '#475569', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
+                                            Ingress traffic is funneled through a strict API Gateway. Identity verification utilizes OAuth2.0 and SAML for external Single Sign-On (Aadhaar/DigiLocker). The platform enforces a zero-trust model: passwords are never stored, and state is managed exclusively via cryptographically signed JWTs and AES-256 encrypted session tokens.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+
+                            <Reveal delay={0.1}>
+                                <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                                    <div style={{ backgroundColor: '#2563eb', color: 'white', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 18 }}>2</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Microservices & The Interoperability Adapter Pattern</h4>
+                                        <p style={{ color: '#475569', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
+                                            The backend is structured as loosely coupled microservices. To achieve integration without state intervention, we deploy an Adapter Design Pattern. Microservice connectors parse our internal, unified JSON payloads into the stringent, heterogeneous SOAP/XML or REST standards enforced by isolated ministries.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+
+                            <Reveal delay={0.2}>
+                                <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                                    <div style={{ backgroundColor: '#2563eb', color: 'white', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 18 }}>3</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Cryptographic Consent Artifact Generation</h4>
+                                        <p style={{ color: '#475569', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
+                                            During inter-departmental data exchanges, the system constructs a highly secure, non-repudiable Consent Artifact. This payload is mathematically signed by the citizen's ephemeral session key, ensuring that Data Fiduciaries only broadcast PII to intended Data Principals post-verification.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+
+                            <Reveal delay={0.3}>
+                                <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                                    <div style={{ backgroundColor: '#2563eb', color: 'white', width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0, fontSize: 18 }}>4</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Fault Tolerance via Circuit Breaker Fallbacks</h4>
+                                        <p style={{ color: '#475569', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
+                                            To handle inherent unreliability in external state APIs, we implement a distributed Circuit Breaker pattern. If a downstream government database experiences latency or downtime, the application gracefully degrades, transitioning the user to an asynchronous OCR-based document upload flow to prevent request blocking.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+                        </div>
+                    </div>
+
+                    {/* API Ecosystem & Integration */}
+                    <div style={{ marginBottom: 80 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 32, borderBottom: '2px solid #e2e8f0', paddingBottom: 16 }}>
+                            3. Production API Ecosystem (API Setu & Sandboxes)
+                        </h3>
+                        <p style={{ color: '#475569', fontSize: 16, marginBottom: 32, lineHeight: 1.6 }}>
+                            Samadhan Path is designed for production readiness. It avoids unnecessary data replication by acting as a highly optimized, stateless orchestration layer. We heavily utilize the <strong>API Setu (India's Open Government Data Platform)</strong> and isolated UAT sandboxes.
+                        </p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+                            {[
+                                { name: 'DigiLocker Web API', tag: 'Data Fetch', desc: 'Secure OAuth2.0 integration for real-time retrieval of authoritative documents (Aadhaar, PAN, Academic Records), eliminating the necessity for redundant, manual file uploads.' },
+                                { name: 'UIDAI e-KYC Sandbox', tag: 'Identity Verification', desc: 'Direct biometric and OTP-based authentication sandbox integration. Guarantees deterministic identity verification while strictly adhering to UIDAI guidelines on local Aadhaar vault storage.' },
+                                { name: 'UMANG Integration API', tag: 'State Services', desc: 'Dynamic service discovery through the UMANG sandbox, allowing immediate onboarding of localized, state-specific welfare endpoints without manual schema recreation.' },
+                                { name: 'PFMS DBT Validator', tag: 'Financial Integrity', desc: 'Direct Benefit Transfer (DBT) verification sandbox that asynchronously queries the central financial registry to confirm bank account seeding prior to initiating subsidy payloads.' }
+                            ].map((api, idx) => (
+                                <Reveal key={idx} delay={idx * 0.1}>
+                                    <div style={{ backgroundColor: '#ffffff', padding: 24, borderRadius: 12, border: '1px solid #cbd5e1', borderLeft: '5px solid #10b981', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                            <h4 style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 }}>{api.name}</h4>
+                                            <span style={{ fontSize: 11, backgroundColor: '#ecfdf5', color: '#059669', padding: '4px 10px', borderRadius: 9999, fontWeight: 700, letterSpacing: '0.05em' }}>{api.tag}</span>
+                                        </div>
+                                        <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{api.desc}</p>
+                                    </div>
+                                </Reveal>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Enterprise Security */}
+                    <div style={{ marginBottom: 40 }}>
+                        <h3 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', marginBottom: 32, borderBottom: '2px solid #e2e8f0', paddingBottom: 16 }}>
+                            4. Enterprise-Grade Security & Threat Mitigation
+                        </h3>
+                        <p style={{ color: '#475569', fontSize: 16, marginBottom: 32, lineHeight: 1.6 }}>
+                            Government integrations require uncompromising security. Our cloud-native architecture implements a multi-layered defense-in-depth strategy to safeguard citizen data and preserve high availability against malicious vectors.
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                            <Reveal>
+                                <div style={{ backgroundColor: '#fff5f5', border: '1px solid #fecaca', borderRadius: 16, padding: 28, display: 'flex', gap: 20, alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ fontSize: 40, backgroundColor: '#fee2e2', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>🛡️</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#7f1d1d', margin: '0 0 6px 0' }}>CDN Edge Caching & DDoS Mitigation</h4>
+                                        <p style={{ fontSize: 14, color: '#991b1b', margin: 0, lineHeight: 1.6 }}>
+                                            Global ingress traffic is processed through a highly distributed Content Delivery Network (CDN) equipped with advanced Layer 3, 4, and 7 DDoS protection. Volumetric attacks and botnets are aggressively absorbed at the edge, guaranteeing origin server stability.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+                            <Reveal delay={0.1}>
+                                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #a7f3d0', borderRadius: 16, padding: 28, display: 'flex', gap: 20, alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ fontSize: 40, backgroundColor: '#d1fae5', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>🔥</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#064e3b', margin: '0 0 6px 0' }}>Web Application Firewall (WAF) & Heuristic Rate Limiting</h4>
+                                        <p style={{ fontSize: 14, color: '#065f46', margin: 0, lineHeight: 1.6 }}>
+                                            Intelligent API rate limits dynamically throttle abusive IP ranges. A strictly configured Web Application Firewall (WAF) deeply inspects payload heuristics, instantly dropping SQL Injection, XSS, and automated scraping attempts targeting citizen PII.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+                            <Reveal delay={0.2}>
+                                <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 16, padding: 28, display: 'flex', gap: 20, alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                    <div style={{ fontSize: 40, backgroundColor: '#dbeafe', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 16 }}>🛑</div>
+                                    <div>
+                                        <h4 style={{ fontSize: 18, fontWeight: 700, color: '#1e3a8a', margin: '0 0 6px 0' }}>Emergency API Kill-Switch & Network Micro-segmentation</h4>
+                                        <p style={{ fontSize: 14, color: '#1e40af', margin: 0, lineHeight: 1.6 }}>
+                                            Application layers are strictly isolated into distinct VPC subnets. In the event of a downstream connector compromise, system administrators can trigger an instantaneous, module-specific API "Kill Switch", entirely containing the blast radius without degrading global platform uptime.
+                                        </p>
+                                    </div>
+                                </div>
+                            </Reveal>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
